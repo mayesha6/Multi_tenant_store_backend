@@ -1,0 +1,44 @@
+import crypto from "crypto";
+import { redisClient } from "../../config/redis.config";
+import AppError from "../../errorHelpers/AppError";
+import { envVars } from "../../config/env";
+import jwt from "jsonwebtoken";
+import prisma from "../../lib/prisma";
+// const OTP_EXPIRATION = 2 * 60 // 2minute
+const generateOtp = (length = 6) => {
+    //6 digit otp
+    const otp = crypto.randomInt(10 ** (length - 1), 10 ** length).toString();
+    return otp;
+};
+const verifyResetOtp = async (email, otp) => {
+    const redisKey = `otp:reset:${email}`;
+    const savedOtp = await redisClient.get(redisKey);
+    if (!savedOtp) {
+        throw new AppError(401, "OTP expired or invalid");
+    }
+    if (savedOtp !== otp) {
+        throw new AppError(401, "Invalid OTP");
+    }
+    const user = await prisma.user.findUnique({
+        where: { email },
+    });
+    if (!user) {
+        throw new AppError(404, "User not found");
+    }
+    if (!user.isVerified) {
+        throw new AppError(401, "User is not verified");
+    }
+    const jwtPayload = {
+        userId: user.id,
+        email: user.email,
+        role: user.role,
+    };
+    const resetToken = jwt.sign(jwtPayload, envVars.JWT_ACCESS_SECRET, { expiresIn: "10m" });
+    await redisClient.del([redisKey]);
+    return resetToken;
+};
+export const OTPService = {
+    generateOtp,
+    verifyResetOtp
+};
+//# sourceMappingURL=otp.services.js.map

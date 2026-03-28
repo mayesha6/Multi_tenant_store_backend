@@ -1,0 +1,168 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id       String  @id @default(uuid())
+  name     String
+  email    String  @unique
+  password String?
+  phone    String?
+  picture  String?
+  address  String?
+  tenantId String
+
+  isDeleted  Boolean  @default(false)
+  isActive   IsActive @default(ACTIVE)
+  isVerified Boolean  @default(false)
+
+  role UserRole @default(USER)
+
+  isSubscribed   Boolean   @default(false)
+  planExpiration DateTime?
+
+  auths        Auth[]
+  Subscription Subscription[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Auth {
+  id         String       @id @default(uuid())
+  provider   AuthProvider
+  providerId String
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+}
+
+model Content {
+  id          String      @id @default(uuid())
+  type        ContentType
+  title       String
+  content     String      @db.Text
+  image       String?
+  order       Int         @default(0)
+  isPublished Boolean     @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FAQ {
+  id        String   @id @default(uuid())
+  question  String
+  answer    String
+  isActive  Boolean  @default(true)
+  order     Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Contact {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String
+  message   String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Plan {
+  id            String   @id @default(uuid())
+  planName      String
+  amount        Float
+  currency      String?
+  interval      Interval @default(month)
+  intervalCount Int
+  freeTrialDays Int?
+  productId     String?
+  priceId       String?
+  active        Boolean  @default(true)
+  description   String?
+  features      Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  Subscription Subscription[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id               String        @id @default(uuid())
+  userId           String        @unique
+  planId           String
+  tenantId         String
+  startDate        DateTime
+  endDate          DateTime?
+  amount           Float
+  stripePaymentId  String        @unique
+  paymentStatus    PaymentStatus @default(PENDING)
+  description      String?
+  benefitsIncluded String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  plan             Plan          @relation(fields: [planId], references: [id], onDelete: Cascade)
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String
+  plan      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum IsActive {
+  ACTIVE
+  INACTIVE
+  BLOCKED
+}
+
+enum AuthProvider {
+  google
+  credentials
+}
+
+enum ContentType {
+  privacy
+  terms
+  about
+  refund
+  cookie
+  shipping
+  disclaimer
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  REFUNDED
+  CANCELED
+  PAID
+}
+
+enum Interval {
+  lifetime
+  week
+  month
+  year
+}

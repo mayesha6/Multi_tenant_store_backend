@@ -1,0 +1,1 @@
+{"version":3,"file":"notFound.js","sourceRoot":"","sources":["../../../src/app/middlewares/notFound.ts"],"names":[],"mappings":"AACA,OAAO,UAAU,MAAM,mBAAmB,CAAC;AAG3C,MAAM,QAAQ,GAAG,CAAC,GAAY,EAAE,GAAa,EAAE,EAAE;IAC7C,GAAG,CAAC,MAAM,CAAC,UAAU,CAAC,SAAS,CAAC,CAAC,IAAI,CAAC;QAClC,OAAO,EAAE,KAAK;QACd,OAAO,EAAE,iBAAiB;KAC7B,CAAC,CAAA;AACN,CAAC,CAAA;AAED,eAAe,QAAQ,CAAA"}
