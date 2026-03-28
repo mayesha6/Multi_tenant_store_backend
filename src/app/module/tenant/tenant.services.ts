@@ -8,7 +8,7 @@ const getAllTenant = async () => {
     return prisma.tenant.findMany()
 }
 
-const getByIdTenant = async (id: string) => {
+const getTenantById = async (id: string) => {
     return prisma.tenant.findUnique({ where: { id } })
 }
 
@@ -19,14 +19,14 @@ const updateTenant = async (id: string, payload: any) => {
     })
 }
 
-const removeTenant = async (id: string) => {
+const deleteTenant = async (id: string) => {
     return prisma.tenant.delete({ where: { id } })
 }
 
 export const TenantService = { 
     createTenant, 
     getAllTenant, 
-    getByIdTenant, 
+    getTenantById, 
     updateTenant, 
-    removeTenant 
+    deleteTenant 
 }
