@@ -138,6 +138,44 @@ model Channel {
   updatedAt DateTime @updatedAt
 }
 
+model Conversation {
+  id             String   @id @default(uuid())
+  tenantId       String
+  contactId      String
+  status         String
+  assignedAgentId String?
+  lastMessageAt  DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Message {
+  id             String   @id @default(uuid())
+  conversationId String
+  senderType     String
+  content        String
+  createdAt      DateTime @default(now())
+}
+
+model Tag {
+  id        String   @id @default(uuid())
+  tenantId  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model KnowledgeBase {
+  id        String   @id @default(uuid())
+  tenantId  String
+  title     String
+  type      String
+  content   String
+  source    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 enum UserRole {
   USER
   ADMIN
