@@ -9,6 +9,7 @@ export declare const UserServices: {
         phone: string | null;
         picture: string | null;
         address: string | null;
+        tenantId: string | null;
         isDeleted: boolean;
         isActive: import("@prisma/client").$Enums.IsActive;
         isVerified: boolean;
@@ -27,6 +28,7 @@ export declare const UserServices: {
             phone: string | null;
             picture: string | null;
             address: string | null;
+            tenantId: string | null;
             isDeleted: boolean;
             isActive: import("@prisma/client").$Enums.IsActive;
             isVerified: boolean;
@@ -81,6 +83,7 @@ export declare const UserServices: {
         phone: string | null;
         picture: string | null;
         address: string | null;
+        tenantId: string | null;
         isDeleted: boolean;
         isActive: import("@prisma/client").$Enums.IsActive;
         isVerified: boolean;
@@ -98,6 +101,7 @@ export declare const UserServices: {
         phone: string | null;
         picture: string | null;
         address: string | null;
+        tenantId: string | null;
         isDeleted: boolean;
         isActive: import("@prisma/client").$Enums.IsActive;
         isVerified: boolean;

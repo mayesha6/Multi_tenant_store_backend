@@ -3,38 +3,67 @@ import { envVars } from "../config/env";
 import AppError from "../errorHelpers/AppError";
 import { verifyToken } from "../utils/jwt";
 import prisma from "../lib/prisma";
-import { IsActive } from "@prisma/client";
+import { IsActive, PaymentStatus, UserRole } from "@prisma/client";
+import { SubscriptionStatus } from "../utils/enums";
 export const checkAuth = (...authRoles) => async (req, res, next) => {
     try {
-        const accessToken = req.cookies?.accessToken || req.headers.authorization?.split(" ")[1];
-        // const accessToken = req.headers.authorization;
+        const accessToken = req.cookies?.accessToken ||
+            req.headers.authorization?.split(" ")[1];
         if (!accessToken) {
-            throw new AppError(403, "No Token Recieved");
+            throw new AppError(httpStatus.UNAUTHORIZED, "No access token provided");
         }
         const verifiedToken = verifyToken(accessToken, envVars.JWT_ACCESS_SECRET);
-        const isUserExist = await prisma.user.findUnique({
-            where: { email: verifiedToken.email }
+        const user = await prisma.user.findUnique({
+            where: { id: verifiedToken.userId },
         });
-        if (!isUserExist) {
-            throw new AppError(httpStatus.BAD_REQUEST, "User does not exist");
+        if (!user) {
+            throw new AppError(httpStatus.NOT_FOUND, "User not found");
         }
-        if (!isUserExist.isVerified) {
-            throw new AppError(httpStatus.BAD_REQUEST, "User is not verified");
+        if (!user.isVerified) {
+            throw new AppError(httpStatus.FORBIDDEN, "User not verified");
         }
-        if (isUserExist.isActive === IsActive.BLOCKED || isUserExist.isActive === IsActive.INACTIVE) {
-            throw new AppError(httpStatus.BAD_REQUEST, `User is ${isUserExist.isActive}`);
+        if (user.isActive === IsActive.BLOCKED ||
+            user.isActive === IsActive.INACTIVE) {
+            throw new AppError(httpStatus.FORBIDDEN, `User is ${user.isActive}`);
         }
-        if (isUserExist.isDeleted) {
-            throw new AppError(httpStatus.BAD_REQUEST, "User is deleted");
+        if (user.isDeleted) {
+            throw new AppError(httpStatus.FORBIDDEN, "User deleted");
         }
-        if (!authRoles.includes(verifiedToken.role)) {
-            throw new AppError(403, "You are not permitted to view this route!!!");
+        // Role check
+        if (authRoles.length && !authRoles.includes(user.role)) {
+            throw new AppError(httpStatus.FORBIDDEN, "You are not permitted to access this route");
         }
-        req.user = verifiedToken;
+        // Super admin bypass tenant + subscription check
+        if (user.role !== UserRole.SUPER_ADMIN) {
+            // Tenant isolation check
+            if (!user.tenantId) {
+                throw new AppError(httpStatus.FORBIDDEN, "User not assigned to any tenant");
+            }
+            const subscription = await prisma.subscription.findFirst({
+                where: {
+                    tenantId: user.tenantId,
+                    paymentStatus: PaymentStatus.PAID,
+                },
+            });
+            if (!subscription) {
+                throw new AppError(httpStatus.FORBIDDEN, "Subscription inactive. Please renew.");
+            }
+            // Attach tenant scoped data
+            req.user = {
+                userId: user.id,
+                role: user.role,
+                tenantId: user.tenantId,
+            };
+        }
+        else {
+            req.user = {
+                userId: user.id,
+                role: user.role,
+            };
+        }
         next();
     }
     catch (error) {
-        console.log("jwt error", error);
         next(error);
     }
 };

@@ -6,21 +6,26 @@ import httpStatus from "http-status-codes";
 import type { JwtPayload } from "jsonwebtoken";
 
 const createSubscription = catchAsync(
-    async (req: Request, res: Response, next: NextFunction) => {
-        //   const userId = req.user?.id as string;
-        const decodedToken = req.user as JwtPayload;
-        const userId = decodedToken.userId;
+    async (req: Request, res: Response) => {
+        const decoded = req.user as JwtPayload;
+
+        const tenantId = decoded.tenantId;
         const { planId } = req.body;
-        console.log("createSubscription - planId:", req.body);
-        const result = await SubscriptionServices.createSubscription(userId, planId);
+
+        const result = await SubscriptionServices.createSubscription(
+            tenantId,
+            planId
+        );
 
         sendResponse(res, {
             success: true,
-            statusCode: httpStatus.OK,
-            message: "Subscription created successfully. Complete the payment.",
+            statusCode: 200,
+            message: "Subscription created successfully",
             data: result,
         });
-    });
+
+    }
+);
 
 const getAllSubscription = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     const results = await SubscriptionServices.getAllSubscription(req.query);

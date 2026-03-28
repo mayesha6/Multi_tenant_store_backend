@@ -5,6 +5,7 @@ import prisma from "../../lib/prisma";
 import AppError from "../../errorHelpers/AppError";
 import { QueryBuilder } from "../../utils/QueryBuilder";
 import { stripe } from "../../lib/stripe";
+import { envVars } from "../../config/env";
 const createSubscription = async (userId, planId) => {
     console.log("createSubscription - userId:", userId);
     return await prisma.$transaction(async (tx) => {

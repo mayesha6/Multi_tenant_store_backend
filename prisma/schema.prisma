@@ -14,13 +14,13 @@ model User {
   phone    String?
   picture  String?
   address  String?
-  tenantId String
+  tenantId String?
 
   isDeleted  Boolean  @default(false)
   isActive   IsActive @default(ACTIVE)
   isVerified Boolean  @default(false)
 
-  role UserRole @default(USER)
+  role UserRole @default(VIEWER)
 
   isSubscribed   Boolean   @default(false)
   planExpiration DateTime?
@@ -104,7 +104,7 @@ model Subscription {
   id               String        @id @default(uuid())
   userId           String        @unique
   planId           String
-  tenantId         String
+  tenantId         String?
   startDate        DateTime
   endDate          DateTime?
   amount           Float
@@ -177,9 +177,11 @@ model KnowledgeBase {
 }
 
 enum UserRole {
-  USER
   ADMIN
   SUPER_ADMIN
+  VIEWER
+  AGENT
+  OWNER
 }
 
 enum IsActive {

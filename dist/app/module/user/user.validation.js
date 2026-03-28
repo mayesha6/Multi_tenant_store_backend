@@ -28,6 +28,7 @@ export const createUserZodSchema = z.object({
         message: "Phone number must be valid for Bangladesh. Format: +8801XXXXXXXXX or 01XXXXXXXXX",
     })
         .optional(),
+    tenantId: z.string(),
     address: z.string().max(200, { message: "Address cannot exceed 200 characters." }).optional(),
 });
 export const updateUserZodSchema = z.object({

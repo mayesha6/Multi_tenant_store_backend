@@ -2,18 +2,15 @@ import { catchAsync } from "../../utils/catchAsync";
 import { SubscriptionServices } from "./subscription.services";
 import { sendResponse } from "../../utils/sendResponse";
 import httpStatus from "http-status-codes";
-import { CLIENT_RENEG_LIMIT } from "tls";
-const createSubscription = catchAsync(async (req, res, next) => {
-    //   const userId = req.user?.id as string;
-    const decodedToken = req.user;
-    const userId = decodedToken.userId;
+const createSubscription = catchAsync(async (req, res) => {
+    const decoded = req.user;
+    const tenantId = decoded.tenantId;
     const { planId } = req.body;
-    console.log("createSubscription - planId:", req.body);
-    const result = await SubscriptionServices.createSubscription(userId, planId);
+    const result = await SubscriptionServices.createSubscription(tenantId, planId);
     sendResponse(res, {
         success: true,
-        statusCode: httpStatus.OK,
-        message: "Subscription created successfully. Complete the payment.",
+        statusCode: 200,
+        message: "Subscription created successfully",
         data: result,
     });
 });

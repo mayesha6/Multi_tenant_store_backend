@@ -15,8 +15,9 @@ export declare const SubscriptionServices: {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            planName: string;
             amount: number;
+            description: string | null;
+            planName: string;
             currency: string | null;
             interval: import("@prisma/client").$Enums.Interval;
             intervalCount: number;
@@ -24,36 +25,37 @@ export declare const SubscriptionServices: {
             productId: string | null;
             priceId: string | null;
             active: boolean;
-            description: string | null;
             features: Prisma.JsonValue | null;
         };
     } & {
         id: string;
+        tenantId: string | null;
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        amount: number;
-        description: string | null;
         planId: string;
         startDate: Date;
         endDate: Date | null;
+        amount: number;
         stripePaymentId: string;
         paymentStatus: import("@prisma/client").$Enums.PaymentStatus;
+        description: string | null;
         benefitsIncluded: string | null;
     }>;
     createSubscription: (userId: string, planId: string) => Promise<{
         subscription: {
             id: string;
+            tenantId: string | null;
             createdAt: Date;
             updatedAt: Date;
             userId: string;
-            amount: number;
-            description: string | null;
             planId: string;
             startDate: Date;
             endDate: Date | null;
+            amount: number;
             stripePaymentId: string;
             paymentStatus: import("@prisma/client").$Enums.PaymentStatus;
+            description: string | null;
             benefitsIncluded: string | null;
         };
         clientSecret: string | null;
@@ -69,6 +71,7 @@ export declare const SubscriptionServices: {
             phone: string | null;
             picture: string | null;
             address: string | null;
+            tenantId: string | null;
             isDeleted: boolean;
             isActive: import("@prisma/client").$Enums.IsActive;
             isVerified: boolean;
@@ -87,16 +90,17 @@ export declare const SubscriptionServices: {
     }>;
     updateSubscription: (subscriptionId: string, data: Subscription) => Promise<{
         id: string;
+        tenantId: string | null;
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        amount: number;
-        description: string | null;
         planId: string;
         startDate: Date;
         endDate: Date | null;
+        amount: number;
         stripePaymentId: string;
         paymentStatus: import("@prisma/client").$Enums.PaymentStatus;
+        description: string | null;
         benefitsIncluded: string | null;
     }>;
     deleteSubscription: (subscriptionId: string) => Promise<null>;
@@ -117,8 +121,9 @@ export declare const SubscriptionServices: {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            planName: string;
             amount: number;
+            description: string | null;
+            planName: string;
             currency: string | null;
             interval: import("@prisma/client").$Enums.Interval;
             intervalCount: number;
@@ -126,21 +131,21 @@ export declare const SubscriptionServices: {
             productId: string | null;
             priceId: string | null;
             active: boolean;
-            description: string | null;
             features: Prisma.JsonValue | null;
         };
     } & {
         id: string;
+        tenantId: string | null;
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        amount: number;
-        description: string | null;
         planId: string;
         startDate: Date;
         endDate: Date | null;
+        amount: number;
         stripePaymentId: string;
         paymentStatus: import("@prisma/client").$Enums.PaymentStatus;
+        description: string | null;
         benefitsIncluded: string | null;
     }>;
 };

@@ -3,6 +3,8 @@ export declare const createContactZodSchema: z.ZodObject<{
     name: z.ZodString;
     email: z.ZodString;
     phone: z.ZodOptional<z.ZodString>;
+    tags: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    tenantId: z.ZodString;
     subject: z.ZodString;
     message: z.ZodString;
 }, z.core.$strip>;

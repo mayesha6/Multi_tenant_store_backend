@@ -9,7 +9,7 @@ const router = Router();
 
 router.post(
   "/create-subscription",
-  checkAuth(UserRole.USER),
+  checkAuth(UserRole.OWNER),
   validateRequest(SubscriptionValidation.SubscriptionValidationSchema),
   SubscriptionController.createSubscription
 );
@@ -22,7 +22,7 @@ router.get(
 
 router.get(
     "/", 
-    checkAuth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.USER), 
+    checkAuth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OWNER, UserRole.AGENT, UserRole.VIEWER), 
     SubscriptionController.getAllSubscription
 );
 

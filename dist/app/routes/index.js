@@ -7,6 +7,7 @@ import { FAQRoutes } from "../module/faq/faq.routes";
 import { ContactRoutes } from "../module/contact/contact.routes";
 import { PlanRoutes } from "../module/plan/plan.routes";
 import { SubscriptionRoutes } from "../module/subscription/subscription.routes";
+import { TenantRoutes } from "../module/tenant/tenant.routes";
 export const router = Router();
 const moduleRoutes = [
     {
@@ -40,6 +41,10 @@ const moduleRoutes = [
     {
         path: "/subscription",
         route: SubscriptionRoutes
+    },
+    {
+        path: "/tenant",
+        route: TenantRoutes
     },
 ];
 moduleRoutes.forEach((route) => {

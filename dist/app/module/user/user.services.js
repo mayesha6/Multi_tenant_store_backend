@@ -51,6 +51,7 @@ const getAllUsers = async (query) => {
             isActive: true,
             isDeleted: true,
             isVerified: true,
+            isSubscribed: true,
             picture: true,
             phone: true,
             address: true,
@@ -115,7 +116,7 @@ const updateUser = async (userId, payload, decodedToken) => {
     if (!existingUser) {
         throw new AppError(httpStatus.NOT_FOUND, "User Not Found");
     }
-    if (decodedToken.role === UserRole.USER) {
+    if (decodedToken.role === UserRole.VIEWER) {
         if (userId !== decodedToken.userId) {
             throw new AppError(401, "You are not authorized");
         }
@@ -124,7 +125,7 @@ const updateUser = async (userId, payload, decodedToken) => {
         existingUser.role === UserRole.SUPER_ADMIN) {
         throw new AppError(401, "You are not authorized");
     }
-    if (decodedToken.role === UserRole.USER &&
+    if (decodedToken.role === UserRole.VIEWER &&
         (payload.role || payload.isActive || payload.isDeleted || payload.isVerified)) {
         throw new AppError(httpStatus.FORBIDDEN, "You are not authorized");
     }
@@ -140,7 +141,7 @@ const updateMyProfile = async (userId, payload, decodedToken, file) => {
     });
     if (!user)
         throw new AppError(404, "User not found");
-    if (decodedToken.role === UserRole.USER &&
+    if (decodedToken.role === UserRole.VIEWER &&
         decodedToken.userId !== userId) {
         throw new AppError(403, "You are not authorized");
     }

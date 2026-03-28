@@ -6,8 +6,9 @@ export declare const PlanServices: {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        planName: string;
         amount: number;
+        description: string | null;
+        planName: string;
         currency: string | null;
         interval: import("@prisma/client").$Enums.Interval;
         intervalCount: number;
@@ -15,15 +16,15 @@ export declare const PlanServices: {
         productId: string | null;
         priceId: string | null;
         active: boolean;
-        description: string | null;
         features: import("@prisma/client/runtime/client").JsonValue | null;
     }[]>;
     getPlanById: (planId: string) => Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        planName: string;
         amount: number;
+        description: string | null;
+        planName: string;
         currency: string | null;
         interval: import("@prisma/client").$Enums.Interval;
         intervalCount: number;
@@ -31,7 +32,6 @@ export declare const PlanServices: {
         productId: string | null;
         priceId: string | null;
         active: boolean;
-        description: string | null;
         features: import("@prisma/client/runtime/client").JsonValue | null;
     } | null>;
     deletePlan: (planId: string) => Promise<{

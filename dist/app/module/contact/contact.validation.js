@@ -9,6 +9,8 @@ export const createContactZodSchema = z.object({
         message: "Phone number must be valid for Bangladesh. Format: +8801XXXXXXXXX or 01XXXXXXXXX",
     })
         .optional(),
+    tags: z.array(z.string()).optional(),
+    tenantId: z.string(),
     subject: z.string().min(3, { message: "Subject must be at least 3 characters." }),
     message: z.string().min(5, { message: "Message must be at least 5 characters." }),
 });
