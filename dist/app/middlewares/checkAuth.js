@@ -42,7 +42,7 @@ export const checkAuth = (...authRoles) => async (req, res, next) => {
             const subscription = await prisma.subscription.findFirst({
                 where: {
                     tenantId: user.tenantId,
-                    paymentStatus: PaymentStatus.PAID,
+                    status: SubscriptionStatus.ACTIVE,
                 },
             });
             if (!subscription) {

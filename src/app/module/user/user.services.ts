@@ -14,7 +14,7 @@ import { QueryBuilder } from "../../utils/QueryBuilder";
 import { userSearchableFields } from "./user.constant";
 
 const createUser = async (payload: IUser) => {
-  const { email, password, ...rest } = payload;
+  const { email, password, name, phone, picture, address, tenantId, role } = payload;
 
   const isUserExist = await prisma.user.findUnique({
     where: { email },
@@ -29,21 +29,25 @@ const createUser = async (payload: IUser) => {
     Number(envVars.BCRYPT_SALT_ROUND)
   );
 
-  const user = await prisma.user.create({
+const user = await prisma.user.create({
     data: {
       email,
       password: hashedPassword,
-      ...rest,
+      name,
+      phone: phone ?? null,
+      picture: picture ?? null,
+      address: address ?? null,
+      tenantId: tenantId ?? null,
+      role,
       auths: {
-        create: [
-          {
-            provider: AuthProvider.credentials,
-            providerId: email,
-          },
-        ],
+        create: {
+          provider: AuthProvider.credentials,
+          providerId: email,
+        },
       },
     },
   });
+
 
   return user;
 };

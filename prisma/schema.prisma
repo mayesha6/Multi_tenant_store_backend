@@ -25,12 +25,33 @@ model User {
   isSubscribed   Boolean   @default(false)
   planExpiration DateTime?
 
-  auths        Auth[]
-  Subscription Subscription[]
+  auths Auth[]
+  // Subscription Subscription[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  tenant    Tenant?  @relation(fields: [tenantId], references: [id])
 }
+
+// model User {
+//   id        String    @id @default(cuid())
+//   name      String
+//   email     String    @unique
+//   password  String
+//   picture   String?   // profile picture URL
+//   phone    String?
+//   address  String?
+//   role      UserRole
+//   tenantId  String?
+//   isActive  Boolean   @default(true)
+//   isDeleted  Boolean  @default(false)
+//   isVerified Boolean  @default(false)
+//   createdAt DateTime  @default(now())
+//   updatedAt DateTime  @updatedAt
+//   auths        Auth[]
+
+//   tenant    Tenant?   @relation(fields: [tenantId], references: [id])
+// }
 
 model Auth {
   id         String       @id @default(uuid())
@@ -78,52 +99,116 @@ model Contact {
   updatedAt DateTime @updatedAt
 }
 
+// model Plan {
+//   id            String   @id @default(uuid())
+//   planName      String
+//   amount        Float
+//   currency      String?
+//   interval      Interval @default(month)
+//   intervalCount Int
+//   freeTrialDays Int?
+//   productId     String?
+//   priceId       String?
+//   active        Boolean  @default(true)
+//   description   String?
+//   features      Json?
+//   createdAt     DateTime @default(now())
+//   updatedAt     DateTime @updatedAt
+
+//   Subscription Subscription[]
+
+//   @@map("plans")
+// }
 
 model Plan {
-  id            String   @id @default(uuid())
-  planName      String
-  amount        Float
-  currency      String?
-  interval      Interval @default(month)
-  intervalCount Int
-  freeTrialDays Int?
-  productId     String?
-  priceId       String?
-  active        Boolean  @default(true)
-  description   String?
-  features      Json?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id       String   @id @default(cuid())
+  name     String   @unique
+  price    Float
+  currency String   @default("USD")
+  interval Interval
+  features Json
+  isActive Boolean  @default(true)
 
-  Subscription Subscription[]
+  stripeProductId String @unique
+  stripePriceId   String @unique
 
-  @@map("plans")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subscriptions Subscription[]
 }
+
+// model Subscription {
+//   id               String        @id @default(uuid())
+//   userId           String        @unique
+//   planId           String
+//   tenantId         String?
+//   startDate        DateTime
+//   endDate          DateTime?
+//   amount           Float
+//   stripePaymentId  String        @unique
+//   paymentStatus    PaymentStatus @default(PENDING)
+//   description      String?
+//   benefitsIncluded String?
+//   createdAt        DateTime      @default(now())
+//   updatedAt        DateTime      @updatedAt
+//   plan             Plan          @relation(fields: [planId], references: [id], onDelete: Cascade)
+//   user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+//   tenant           Tenant?       @relation(fields: [tenantId], references: [id])
+
+//   @@map("subscriptions")
+// }
 
 model Subscription {
-  id               String        @id @default(uuid())
-  userId           String        @unique
-  planId           String
-  tenantId         String?
-  startDate        DateTime
-  endDate          DateTime?
-  amount           Float
-  stripePaymentId  String        @unique
-  paymentStatus    PaymentStatus @default(PENDING)
-  description      String?
-  benefitsIncluded String?
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
-  plan             Plan          @relation(fields: [planId], references: [id], onDelete: Cascade)
-  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id            String             @id @default(cuid())
+  tenantId      String
+  planId        String
+  stripeSubId   String             @unique
+  stripeCustomerId String 
+  status        SubscriptionStatus @default(ACTIVE) // ACTIVE, CANCELED, PAST_DUE
+  startDate     DateTime
+  endDate       DateTime
+  intervalCount Int                @default(1)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
 
-  @@map("subscriptions")
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  plan   Plan   @relation(fields: [planId], references: [id])
 }
 
+// model Payment {
+//   id             String       @id @default(uuid())
+//   subscriptionId String
+//   subscription   Subscription @relation(fields: [subscriptionId], references: [id])
+
+//   stripeInvoiceId String @unique
+//   amount          Int
+//   currency        String
+//   status          String
+
+//   createdAt DateTime @default(now())
+// }
+
+// model Tenant {
+//   id        String   @id @default(uuid())
+//   name      String
+//   plan      String
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
+
 model Tenant {
-  id        String   @id @default(uuid())
-  name      String
-  plan      String
+  id               String  @id @default(uuid())
+  name             String
+  slug             String  @unique
+  isActive         Boolean @default(false) // CHANGED: depends on subscription
+  stripeCustomerId String? @unique // ADDED: required for Stripe
+  planId           String? // CHANGED: current active plan
+  subscriptionId   String? // ADDED: current active subscription
+
+  users         User[]
+  subscriptions Subscription[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -139,14 +224,14 @@ model Channel {
 }
 
 model Conversation {
-  id             String   @id @default(uuid())
-  tenantId       String
-  contactId      String
-  status         String
+  id              String   @id @default(uuid())
+  tenantId        String
+  contactId       String
+  status          String
   assignedAgentId String?
-  lastMessageAt  DateTime @default(now())
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  lastMessageAt   DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model Message {
@@ -214,8 +299,16 @@ enum PaymentStatus {
 }
 
 enum Interval {
-  lifetime
-  week
-  month
-  year
+  DAY
+  WEEK
+  MONTH
+  YEAR
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  TRIALING
+  INACTIVE
 }

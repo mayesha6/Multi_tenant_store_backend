@@ -1,152 +1,119 @@
-import Stripe from "stripe";
-import type { Prisma, Subscription } from "@prisma/client";
+import type { ISubscription } from "./subscription.interface";
 export declare const SubscriptionServices: {
-    getMySubscription: (userId: string) => Promise<{
-        user: {
-            email: string;
+    createSubscription: (payload: ISubscription) => Promise<{
+        id: string;
+        tenantId: string;
+        createdAt: Date;
+        updatedAt: Date;
+        planId: string;
+        stripeSubId: string;
+        stripeCustomerId: string;
+        status: import("@prisma/client").$Enums.SubscriptionStatus;
+        startDate: Date;
+        endDate: Date;
+        intervalCount: number;
+    }>;
+    getSubscriptionById: (id: string) => Promise<{
+        tenant: {
             id: string;
             name: string;
-            picture: string | null;
-            role: import("@prisma/client").$Enums.UserRole;
-            isSubscribed: boolean;
-            planExpiration: Date | null;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+            planId: string | null;
+            stripeCustomerId: string | null;
+            slug: string;
+            subscriptionId: string | null;
         };
         plan: {
             id: string;
+            name: string;
+            isActive: boolean;
             createdAt: Date;
             updatedAt: Date;
-            amount: number;
-            description: string | null;
-            planName: string;
-            currency: string | null;
+            price: number;
+            currency: string;
             interval: import("@prisma/client").$Enums.Interval;
-            intervalCount: number;
-            freeTrialDays: number | null;
-            productId: string | null;
-            priceId: string | null;
-            active: boolean;
-            features: Prisma.JsonValue | null;
+            features: import("@prisma/client/runtime/client").JsonValue;
+            stripeProductId: string;
+            stripePriceId: string;
         };
     } & {
         id: string;
-        tenantId: string | null;
+        tenantId: string;
         createdAt: Date;
         updatedAt: Date;
-        userId: string;
         planId: string;
+        stripeSubId: string;
+        stripeCustomerId: string;
+        status: import("@prisma/client").$Enums.SubscriptionStatus;
         startDate: Date;
-        endDate: Date | null;
-        amount: number;
-        stripePaymentId: string;
-        paymentStatus: import("@prisma/client").$Enums.PaymentStatus;
-        description: string | null;
-        benefitsIncluded: string | null;
+        endDate: Date;
+        intervalCount: number;
     }>;
-    createSubscription: (userId: string, planId: string) => Promise<{
-        subscription: {
-            id: string;
-            tenantId: string | null;
-            createdAt: Date;
-            updatedAt: Date;
-            userId: string;
-            planId: string;
-            startDate: Date;
-            endDate: Date | null;
-            amount: number;
-            stripePaymentId: string;
-            paymentStatus: import("@prisma/client").$Enums.PaymentStatus;
-            description: string | null;
-            benefitsIncluded: string | null;
-        };
-        clientSecret: string | null;
-        paymentIntentId: string;
-        planType: string;
-    }>;
-    getAllSubscription: (query: Record<string, any>) => Promise<{
-        data: {
-            email: string;
-            password: string | null;
+    getAllSubscriptions: () => Promise<({
+        tenant: {
             id: string;
             name: string;
-            phone: string | null;
-            picture: string | null;
-            address: string | null;
-            tenantId: string | null;
-            isDeleted: boolean;
-            isActive: import("@prisma/client").$Enums.IsActive;
-            isVerified: boolean;
-            role: import("@prisma/client").$Enums.UserRole;
-            isSubscribed: boolean;
-            planExpiration: Date | null;
+            isActive: boolean;
             createdAt: Date;
             updatedAt: Date;
-        }[];
-        meta: {
-            page: number;
-            limit: number;
-            total: number;
-            totalPage: number;
-        };
-    }>;
-    updateSubscription: (subscriptionId: string, data: Subscription) => Promise<{
-        id: string;
-        tenantId: string | null;
-        createdAt: Date;
-        updatedAt: Date;
-        userId: string;
-        planId: string;
-        startDate: Date;
-        endDate: Date | null;
-        amount: number;
-        stripePaymentId: string;
-        paymentStatus: import("@prisma/client").$Enums.PaymentStatus;
-        description: string | null;
-        benefitsIncluded: string | null;
-    }>;
-    deleteSubscription: (subscriptionId: string) => Promise<null>;
-    HandleStripeWebhook: (event: Stripe.Event) => Promise<{
-        received: boolean;
-    }>;
-    getSingleSubscription: (subscriptionId: string) => Promise<{
-        user: {
-            email: string;
-            id: string;
-            name: string;
-            picture: string | null;
-            role: import("@prisma/client").$Enums.UserRole;
-            isSubscribed: boolean;
-            planExpiration: Date | null;
+            planId: string | null;
+            stripeCustomerId: string | null;
+            slug: string;
+            subscriptionId: string | null;
         };
         plan: {
             id: string;
+            name: string;
+            isActive: boolean;
             createdAt: Date;
             updatedAt: Date;
-            amount: number;
-            description: string | null;
-            planName: string;
-            currency: string | null;
+            price: number;
+            currency: string;
             interval: import("@prisma/client").$Enums.Interval;
-            intervalCount: number;
-            freeTrialDays: number | null;
-            productId: string | null;
-            priceId: string | null;
-            active: boolean;
-            features: Prisma.JsonValue | null;
+            features: import("@prisma/client/runtime/client").JsonValue;
+            stripeProductId: string;
+            stripePriceId: string;
         };
     } & {
         id: string;
-        tenantId: string | null;
+        tenantId: string;
         createdAt: Date;
         updatedAt: Date;
-        userId: string;
         planId: string;
+        stripeSubId: string;
+        stripeCustomerId: string;
+        status: import("@prisma/client").$Enums.SubscriptionStatus;
         startDate: Date;
-        endDate: Date | null;
-        amount: number;
-        stripePaymentId: string;
-        paymentStatus: import("@prisma/client").$Enums.PaymentStatus;
-        description: string | null;
-        benefitsIncluded: string | null;
+        endDate: Date;
+        intervalCount: number;
+    })[]>;
+    updateSubscription: (id: string, payload: Partial<ISubscription>) => Promise<{
+        id: string;
+        tenantId: string;
+        createdAt: Date;
+        updatedAt: Date;
+        planId: string;
+        stripeSubId: string;
+        stripeCustomerId: string;
+        status: import("@prisma/client").$Enums.SubscriptionStatus;
+        startDate: Date;
+        endDate: Date;
+        intervalCount: number;
+    }>;
+    cancelSubscription: (id: string) => Promise<{
+        id: string;
+        tenantId: string;
+        createdAt: Date;
+        updatedAt: Date;
+        planId: string;
+        stripeSubId: string;
+        stripeCustomerId: string;
+        status: import("@prisma/client").$Enums.SubscriptionStatus;
+        startDate: Date;
+        endDate: Date;
+        intervalCount: number;
     }>;
 };
 //# sourceMappingURL=subscription.services.d.ts.map

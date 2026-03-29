@@ -13,6 +13,7 @@ export interface IUser {
     phone?: string | null;
     picture?: string | null;
     address?: string | null;
+    tenantId?: string | null;
     isDeleted?: boolean;
     isActive?: IsActive;
     isVerified?: boolean;

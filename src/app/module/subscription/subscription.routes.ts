@@ -1,48 +1,25 @@
 import { Router } from "express";
-import { UserRole } from "@prisma/client";
-import { SubscriptionController } from "./subscription.controller";
-import { SubscriptionValidation } from "./subscription.validation";
 import { checkAuth } from "../../middlewares/checkAuth";
 import { validateRequest } from "../../middlewares/validateRequest";
+import { createSubscriptionZodSchema, updateSubscriptionZodSchema } from "./subscription.validation";
+import { UserRole } from "@prisma/client";
+import { SubscriptionController } from "./subscription.controller";
 
 const router = Router();
 
 router.post(
-  "/create-subscription",
-  checkAuth(UserRole.OWNER),
-  validateRequest(SubscriptionValidation.SubscriptionValidationSchema),
+  "/",
+  checkAuth(UserRole.SUPER_ADMIN, UserRole.ADMIN),
+  validateRequest(createSubscriptionZodSchema),
   SubscriptionController.createSubscription
 );
 
-router.get(
-  "/my-subscription",
-  checkAuth(...Object.values(UserRole)),
-  SubscriptionController.getMySubscription
-);
+router.get("/", checkAuth(...Object.values(UserRole)), SubscriptionController.getAllSubscriptions);
 
-router.get(
-    "/", 
-    checkAuth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OWNER, UserRole.AGENT, UserRole.VIEWER), 
-    SubscriptionController.getAllSubscription
-);
+router.get("/:id", checkAuth(...Object.values(UserRole)), SubscriptionController.getSubscriptionById);
 
-router.get(
-  "/:subscriptionId",
-  checkAuth(...Object.values(UserRole)),
-  SubscriptionController.getSingleSubscription
-);
+router.patch("/:id", checkAuth(UserRole.SUPER_ADMIN, UserRole.ADMIN), validateRequest(updateSubscriptionZodSchema), SubscriptionController.updateSubscription);
 
-router.patch(
-  "/:subscriptionId",
-  checkAuth(UserRole.SUPER_ADMIN, UserRole.ADMIN),
-  SubscriptionController.updateSubscription
-);
-
-router.delete(
-  "/:subscriptionId",
-  checkAuth(UserRole.SUPER_ADMIN, UserRole.ADMIN),
-  SubscriptionController.deleteSubscription 
-);
-
+router.patch("/:id/cancel", checkAuth(UserRole.SUPER_ADMIN, UserRole.ADMIN), SubscriptionController.cancelSubscription);
 
 export const SubscriptionRoutes = router;

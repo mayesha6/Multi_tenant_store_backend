@@ -1,42 +1,69 @@
-import type { Plan } from "@prisma/client";
-export declare const updatePlan: (planId: string, payload: Partial<Plan>) => Promise<any>;
+import type { IPlan } from "./plan.interface";
 export declare const PlanServices: {
-    createPlan: (payload: Plan) => Promise<any>;
+    createPlan: (payload: IPlan) => Promise<{
+        id: string;
+        name: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        price: number;
+        currency: string;
+        interval: import("@prisma/client").$Enums.Interval;
+        features: import("@prisma/client/runtime/client").JsonValue;
+        stripeProductId: string;
+        stripePriceId: string;
+    }>;
     getAllPlans: () => Promise<{
         id: string;
+        name: string;
+        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
-        amount: number;
-        description: string | null;
-        planName: string;
-        currency: string | null;
+        price: number;
+        currency: string;
         interval: import("@prisma/client").$Enums.Interval;
-        intervalCount: number;
-        freeTrialDays: number | null;
-        productId: string | null;
-        priceId: string | null;
-        active: boolean;
-        features: import("@prisma/client/runtime/client").JsonValue | null;
+        features: import("@prisma/client/runtime/client").JsonValue;
+        stripeProductId: string;
+        stripePriceId: string;
     }[]>;
-    getPlanById: (planId: string) => Promise<{
+    getPlanById: (id: string) => Promise<{
         id: string;
+        name: string;
+        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
-        amount: number;
-        description: string | null;
-        planName: string;
-        currency: string | null;
+        price: number;
+        currency: string;
         interval: import("@prisma/client").$Enums.Interval;
-        intervalCount: number;
-        freeTrialDays: number | null;
-        productId: string | null;
-        priceId: string | null;
-        active: boolean;
-        features: import("@prisma/client/runtime/client").JsonValue | null;
-    } | null>;
-    deletePlan: (planId: string) => Promise<{
-        message: string;
+        features: import("@prisma/client/runtime/client").JsonValue;
+        stripeProductId: string;
+        stripePriceId: string;
     }>;
-    updatePlan: (planId: string, payload: Partial<Plan>) => Promise<any>;
+    updatePlan: (id: string, payload: Partial<IPlan>) => Promise<{
+        id: string;
+        name: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        price: number;
+        currency: string;
+        interval: import("@prisma/client").$Enums.Interval;
+        features: import("@prisma/client/runtime/client").JsonValue;
+        stripeProductId: string;
+        stripePriceId: string;
+    }>;
+    deletePlan: (id: string) => Promise<{
+        id: string;
+        name: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        price: number;
+        currency: string;
+        interval: import("@prisma/client").$Enums.Interval;
+        features: import("@prisma/client/runtime/client").JsonValue;
+        stripeProductId: string;
+        stripePriceId: string;
+    }>;
 };
 //# sourceMappingURL=plan.services.d.ts.map

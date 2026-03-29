@@ -75,7 +75,7 @@ export const checkAuth =
                     const subscription = await prisma.subscription.findFirst({
                         where: {
                             tenantId: user.tenantId,
-                            paymentStatus: PaymentStatus.PAID,
+                            status: SubscriptionStatus.ACTIVE,
                         },
                     })
 

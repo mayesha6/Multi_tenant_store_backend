@@ -1,14 +1,20 @@
-import { Interval } from "@prisma/client";
 import { z } from "zod";
+import { Interval } from "@prisma/client";
 
+export const createPlanZodSchema = z.object({
+  name: z.string().min(3).max(50),
+  price: z.number().min(0),
+  currency: z.string().min(3).max(5).optional(),
+  interval: z.enum(Object.values(Interval) as [string, ...string[]]),
+  features: z.array(z.string()).optional(),
+  isActive: z.boolean().optional(),
+});
 
-export const planValidationSchema = z.object({
-    planName: z.string().min(1, "Plan name is required"),
-    description: z.string().max(500).optional(),
-    amount: z.number().min(0, "Amount must be positive"),
-    currency: z.string().length(3, "Currency must be 3-letter code").optional(),
-    interval: z.enum(Object.values(Interval) as [string, ...string[]]).optional(),
-    intervalCount: z.number().int().positive("Interval count must be positive").optional(),
-    freeTrialDays: z.number().int().nonnegative().optional().default(0),
-    active: z.boolean().default(true).optional(),
+export const updatePlanZodSchema = z.object({
+  name: z.string().min(3).max(50).optional(),
+  price: z.number().min(0).optional(),
+  currency: z.string().min(3).max(5).optional(),
+  interval: z.enum(Object.values(Interval) as [string, ...string[]]).optional(),
+  features: z.array(z.string()).optional(),
+  isActive: z.boolean().optional(),
 });

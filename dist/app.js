@@ -8,9 +8,9 @@ import "./app/config/passport";
 import { globalErrorHandler } from "./app/middlewares/globalErrorHandler";
 import notFound from "./app/middlewares/notFound";
 import { router } from "./app/routes";
-import { SubscriptionController } from "./app/module/subscription/subscription.controller";
+import { StripeWebhookControllers } from "./app/module/webhook/webhook.controller";
 const app = express();
-router.post("/stripe/webhook", SubscriptionController.handleStripeWebhook);
+router.post("/stripe/webhook", StripeWebhookControllers.handleWebhook);
 app.use(expressSession({
     secret: envVars.EXPRESS_SESSION_SECRET,
     resave: false,
