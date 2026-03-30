@@ -16,11 +16,11 @@ router.post(
 
 router.get("/", PlanControllers.getAllPlans);
 
-router.get("/:planId", PlanControllers.getPlanById);
-router.patch("/:planId", PlanControllers.updatePlan);
+router.get("/:id", PlanControllers.getPlanById);
+router.patch("/:id", PlanControllers.updatePlan);
 
 router.delete(
-  "/:planId",
+  "/:id",
   checkAuth(UserRole.SUPER_ADMIN, UserRole.ADMIN),
   PlanControllers.deletePlan
 );

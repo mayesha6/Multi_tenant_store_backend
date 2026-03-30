@@ -53,10 +53,30 @@ const cancelSubscription = catchAsync(async (req: Request, res: Response, next: 
     });
 })
 
+  const createStripeSubscription = catchAsync(
+  async (req: Request, res: Response) => {
+    const { tenantId, stripePriceId, paymentMethodId } = req.body
+
+    const result = await SubscriptionServices.createStripeSubscription(
+      tenantId,
+      stripePriceId,
+      paymentMethodId
+    )
+
+    sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.CREATED,
+      message: "Stripe subscription created successfully",
+      data: result,
+    })
+  }
+)
+
 export const SubscriptionController = {
     createSubscription,
     getSubscriptionById,
     getAllSubscriptions,
     updateSubscription,
     cancelSubscription,
+    createStripeSubscription
 };

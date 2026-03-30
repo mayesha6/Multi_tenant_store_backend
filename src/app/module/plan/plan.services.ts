@@ -82,6 +82,7 @@ const updatePlan = async (id: string, payload: Partial<IPlan>) => {
 };
 
 const deletePlan = async (id: string) => {
+  if (!id) throw new AppError(httpStatus.BAD_REQUEST, "Plan ID is required");
   const plan = await prisma.plan.findUnique({ where: { id } });
   if (!plan) throw new AppError(httpStatus.NOT_FOUND, "Plan not found");
 

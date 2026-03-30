@@ -3,7 +3,7 @@ import { stripe } from "../../lib/stripe";
 import AppError from "../../errorHelpers/AppError";
 import httpStatus from "http-status-codes";
 import Stripe from "stripe";
-const mapStripeStatus = (status) => {
+export const mapStripeStatus = (status) => {
     switch (status) {
         case "active":
             return "ACTIVE";
