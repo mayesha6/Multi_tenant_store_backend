@@ -159,22 +159,25 @@ model Plan {
 //   @@map("subscriptions")
 // }
 
-model Subscription {
-  id            String             @id @default(cuid())
-  tenantId      String
-  planId        String
-  stripeSubId   String             @unique
-  stripeCustomerId String 
-  status        SubscriptionStatus @default(ACTIVE) // ACTIVE, CANCELED, PAST_DUE
-  startDate     DateTime
-  endDate       DateTime
-  intervalCount Int                @default(1)
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
+// model Subscription {
+//   id               String             @id @default(cuid())
+//   tenantId         String
+//   planId           String
+//   stripeSubId      String             @unique
+//   stripeCustomerId String
+//   status           SubscriptionStatus @default(ACTIVE) // ACTIVE, CANCELED, PAST_DUE
+//   startDate        DateTime
+//   endDate          DateTime
+//   intervalCount    Int                @default(1)
+//   createdAt        DateTime           @default(now())
+//   updatedAt        DateTime           @updatedAt
 
-  tenant Tenant @relation(fields: [tenantId], references: [id])
-  plan   Plan   @relation(fields: [planId], references: [id])
-}
+//   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+//   plan   Plan   @relation(fields: [planId], references: [id])
+
+//   @@index([tenantId])
+//   @@index([status])
+// }
 
 // model Payment {
 //   id             String       @id @default(uuid())
@@ -197,21 +200,23 @@ model Subscription {
 //   updatedAt DateTime @updatedAt
 // }
 
-model Tenant {
-  id               String  @id @default(uuid())
-  name             String
-  slug             String  @unique
-  isActive         Boolean @default(false) // CHANGED: depends on subscription
-  stripeCustomerId String? @unique // ADDED: required for Stripe
-  planId           String? // CHANGED: current active plan
-  subscriptionId   String? // ADDED: current active subscription
+// model Tenant {
+//   id               String  @id @default(uuid())
+//   name             String
+//   slug             String  @unique
+//   isActive         Boolean @default(false) // CHANGED: depends on subscription
+//   stripeCustomerId String? @unique // ADDED: required for Stripe
+//   currentplanId           String? // CHANGED: current active plan
+//   currentsubscriptionId   String? // ADDED: current active subscription
 
-  users         User[]
-  subscriptions Subscription[]
+//   users         User[]
+//   subscriptions Subscription[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   @@index([slug])
+// }
 
 model Channel {
   id        String   @id @default(uuid())
@@ -259,6 +264,52 @@ model KnowledgeBase {
   source    String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Tenant {
+  id               String  @id @default(uuid())
+  name             String
+  slug             String  @unique
+  stripeCustomerId String? @unique
+
+  isActive      Boolean @default(false)
+  currentPlanId String?
+  currentSubId  String?
+
+  users         User[]
+  subscriptions Subscription[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+
+model Subscription {
+  id               String             @id @default(cuid())
+  tenantId         String
+  planId           String
+  stripeSubId      String             @unique
+  stripeCustomerId String
+  status           SubscriptionStatus
+  startDate        DateTime
+  endDate          DateTime
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  plan   Plan   @relation(fields: [planId], references: [id])
+
+  @@index([tenantId])
+  @@index([status])
+}
+
+model WebhookEvent {
+  id        String   @id @default(cuid())
+  eventId   String   @unique
+  type      String
+  payload   Json
+  createdAt DateTime @default(now())
 }
 
 enum UserRole {

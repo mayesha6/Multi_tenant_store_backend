@@ -72,19 +72,19 @@ export const checkAuth =
                         )
                     }
 
-                    const subscription = await prisma.subscription.findFirst({
-                        where: {
-                            tenantId: user.tenantId,
-                            status: SubscriptionStatus.ACTIVE,
-                        },
-                    })
+                    // const subscription = await prisma.subscription.findFirst({
+                    //     where: {
+                    //         tenantId: user.tenantId,
+                    //         status: SubscriptionStatus.ACTIVE,
+                    //     },
+                    // })
 
-                    if (!subscription) {
-                        throw new AppError(
-                            httpStatus.FORBIDDEN,
-                            "Subscription inactive. Please renew."
-                        )
-                    }
+                    // if (!subscription) {
+                    //     throw new AppError(
+                    //         httpStatus.FORBIDDEN,
+                    //         "Subscription inactive. Please renew."
+                    //     )
+                    // }
 
                     // Attach tenant scoped data
                     req.user = {
