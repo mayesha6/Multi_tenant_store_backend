@@ -153,6 +153,7 @@ model Conversation {
   @@index([contactId])
   @@index([assignedToId])
   @@index([status])
+   @@index([lastMessageAt])
 }
 
 model Message {
@@ -166,16 +167,20 @@ model Message {
   externalMessageId String?
   deliveryStatus    MessageDeliveryStatus @default(SENT)
   metadata          Json?
+  isDeleted         Boolean               @default(false)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
 
-  tenant       Tenant       @relation(fields: [tenantId], references: [id])
-  conversation Conversation @relation(fields: [conversationId], references: [id])
+  tenant            Tenant                @relation(fields: [tenantId], references: [id])
+  conversation      Conversation          @relation(fields: [conversationId], references: [id])
 
   @@index([tenantId])
   @@index([conversationId])
   @@index([externalMessageId])
+  @@index([createdAt])
+
+  @@unique([tenantId, externalMessageId])
 }
 
 model Tag {
@@ -252,6 +257,18 @@ model WebhookEvent {
   createdAt DateTime @default(now())
 }
 
+model MessageWebhookEvent {
+  id            String   @id @default(uuid())
+  eventId       String   @unique
+  type          String
+  source        String?  // stripe / whatsapp / email / instagram etc
+  status        String   @default("PENDING") // PENDING / SUCCESS / FAILED
+  payload       Json
+  errorMessage  String?
+  processedAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
 enum UserRole {
   ADMIN
   SUPER_ADMIN
