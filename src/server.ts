@@ -1,10 +1,11 @@
 /* eslint-disable no-console */
-import { Server } from "http";
+import http, { Server } from "http";
 import app from "./app";
 import { envVars } from "./app/config/env";
 import { connectRedis } from "./app/config/redis.config";
 import { seedSuperAdmin } from "./app/utils/seedSuperAdmin";
 import prisma from "./app/lib/prisma";
+import { initSocket } from "./app/config/socket";
 
 let server: Server;
 
@@ -14,8 +15,22 @@ const startServer = async () => {
     await prisma.$connect();
     console.log("Connected to PostgreSQL via Prisma ✅");
 
-    server = app.listen(envVars.PORT, () => {
+    /**
+     * IMPORTANT:
+     * app.listen না করে http server create করছি
+     * কারণ Socket.IO HTTP server এর উপর বসে
+     */
+    const httpServer = http.createServer(app);
+
+    /**
+     * Socket initialize
+     * এই line এর পর socket server ready
+     */
+    initSocket(httpServer);
+
+    server = httpServer.listen(envVars.PORT, () => {
       console.log(`Server is listening on port ${envVars.PORT} 🚀`);
+      console.log("Socket.IO initialized ✅");
     });
   } catch (error) {
     console.log("Failed to start server:", error);

@@ -106,7 +106,7 @@ model Contact {
   address  String?
   status   ContactStatus @default(ACTIVE)
   source   ContactSource @default(MANUAL)
-  tags     String[] // MVP হিসেবে string[] রাখলাম. পরে separate tag table করতে পারো.
+  tags     String[] 
   metadata Json?
 
   isDeleted Boolean @default(false)
@@ -258,6 +258,7 @@ enum UserRole {
   VIEWER
   AGENT
   OWNER
+  SUPPORT
 }
 
 enum IsActive {

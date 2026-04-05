@@ -1,63 +1,106 @@
-import type { Request, Response } from "express";
-import { catchAsync } from "../../utils/catchAsync";
-import { sendResponse } from "../../utils/sendResponse";
-import { ContactService } from "./contact.services";
+
 import httpStatus from "http-status-codes";
+import { catchAsync } from "../../utils/catchAsync";
+import type { NextFunction, Request, Response } from "express";
+import { ContactServices } from "./contact.services";
+import { sendResponse } from "../../utils/sendResponse";
+import type { JwtPayload } from "jsonwebtoken";
 
-const createContact = catchAsync(async (req: Request, res: Response) => {
-  const contact = await ContactService.createContact(req.body);
-  sendResponse(res, {
-    success: true,
-    statusCode: httpStatus.CREATED,
-    message: "Contact created successfully",
-    data: contact,
-  });
-});
+const createContact = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const contact = await ContactServices.createContact(req.body);
 
-const getContacts = catchAsync(async (req: Request, res: Response) => {
-  const contacts = await ContactService.getContacts();
-  sendResponse(res, {
-    success: true,
-    statusCode: httpStatus.OK,
-    message: "Contacts fetched successfully",
-    data: contacts,
-  });
-});
+    sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.CREATED,
+      message: "Contact created successfully",
+      data: contact,
+    });
+  }
+);
 
-const getContactById = catchAsync(async (req: Request, res: Response) => {
-  const contact = await ContactService.getContactById(req.params.id as string);
-  sendResponse(res, {
-    success: true,
-    statusCode: httpStatus.OK,
-    message: "Contact fetched successfully",
-    data: contact,
-  });
-});
+const getAllContacts = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    // Assumption:
+    // তোমার auth middleware req.user inject করে
+    // এবং সেখানে tenantId আছে
+    const user = req.user as JwtPayload
+    const tenantId = user.tenantId;
+    const result = await ContactServices.getAllContacts(
+      req.query,
+      tenantId
+    );
 
-const updateContact = catchAsync(async (req: Request, res: Response) => {
-  const contact = await ContactService.updateContact(req.params.id as string, req.body);
-  sendResponse(res, {
-    success: true,
-    statusCode: httpStatus.OK,
-    message: "Contact updated successfully",
-    data: contact,
-  });
-});
+    sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Contacts fetched successfully",
+      meta: result.meta,
+      data: result.data,
+    });
+  }
+);
 
-const deleteContact = catchAsync(async (req: Request, res: Response) => {
-  const result = await ContactService.deleteContact(req.params.id   as string);
-  sendResponse(res, {
-    success: true,
-    statusCode: httpStatus.OK,
-    message: result.message,
-    data: null,
-  });
-});
+const getSingleContact = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+     const user = req.user as JwtPayload
+    const tenantId = user.tenantId;
+    const result = await ContactServices.getSingleContact(
+      req.params.id as string,
+      tenantId
+    );
 
-export const ContactController = {
+    sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Contact fetched successfully",
+      data: result,
+    });
+  }
+);
+
+const updateContact = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const user = req.user as JwtPayload;
+    const tenantId = user.tenantId;
+    const result = await ContactServices.updateContact(
+      req.params.id as string,
+      req.body,
+      tenantId
+    );
+
+    sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Contact updated successfully",
+      data: result,
+    });
+  }
+);
+
+const deleteContactById = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const user = req.user as JwtPayload;
+    const tenantId = user.tenantId;
+
+    const result = await ContactServices.deleteContactById(
+      req.params.id as string,
+      tenantId
+    );
+
+    sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Contact deleted successfully",
+      data: result,
+    });
+  }
+);
+
+export const ContactControllers = {
   createContact,
-  getContacts,
-  getContactById,
+  getAllContacts,
+  getSingleContact,
   updateContact,
-  deleteContact,
+  deleteContactById,
 };
