@@ -27,43 +27,52 @@ const getNewAccessToken = async (refreshToken: string) => {
 };
 
 const resetPassword = async (
-  token: string,
-  newPassword: string
+  email: string,
+  otp: string,
+  newPassword: string,
+  confirmPassword: string
 ) => {
-  let decoded;
+  if (newPassword !== confirmPassword) {
+    throw new AppError(400, "Passwords do not match");
+  }
 
-  try {
-    decoded = jwt.verify(
-      token,
-      envVars.JWT_ACCESS_SECRET
-    ) as jwt.JwtPayload;
-  } catch (err) {
-    throw new AppError(401, "Invalid or expired reset token");
+  const redisKey = `otp:reset:${email}`;
+  const savedOtp = await redisClient.get(redisKey);
+
+  if (!savedOtp) {
+    throw new AppError(401, "OTP expired or invalid");
+  }
+
+  if (savedOtp !== otp) {
+    throw new AppError(401, "Invalid OTP");
   }
 
   const user = await prisma.user.findUnique({
-    where: { id: decoded.userId },
+    where: { email },
   });
 
-  if (!user) {
-    throw new AppError(404, "User not found");
+  if (!user) throw new AppError(404, "User not found");
+  if (!user.isVerified) throw new AppError(401, "User not verified");
+  if (user.isDeleted) throw new AppError(400, "User is deleted");
+  if (user.isActive === "BLOCKED" || user.isActive === "INACTIVE") {
+    throw new AppError(400, `User is ${user.isActive}`);
   }
 
-  const hashedPassword = await bcrypt.hash(
+  const hashedPassword = await bcryptjs.hash(
     newPassword,
-    Number(envVars.BCRYPT_SALT_ROUND)
+    Number(envVars.BCRYPT_SALT_ROUND || 10)
   );
 
+  user.password = hashedPassword;
   await prisma.user.update({
     where: { id: user.id },
     data: { password: hashedPassword },
   });
 
-  return {
-    message: "Password reset successfully",
-  };
-};
+  await redisClient.del([redisKey]);
 
+  return null;
+};
 const forgotPassword = async (email: string) => {
   const user = await prisma.user.findUnique({
     where: { email },
@@ -72,11 +81,7 @@ const forgotPassword = async (email: string) => {
   if (!user) throw new AppError(404, "User not found");
   if (!user.isVerified) throw new AppError(401, "User not verified");
   if (user.isDeleted) throw new AppError(400, "User is deleted");
-
-  if (
-    user.isActive === IsActive.BLOCKED ||
-    user.isActive === IsActive.INACTIVE
-  ) {
+  if (user.isActive === "BLOCKED" || user.isActive === "INACTIVE") {
     throw new AppError(400, `User is ${user.isActive}`);
   }
 
@@ -87,7 +92,7 @@ const forgotPassword = async (email: string) => {
     throw new AppError(429, "OTP already sent. Please wait 2 minutes.");
   }
 
-  const generateOtp = (length = 6) => {
+   const generateOtp = (length = 6) => {
     return crypto
       .randomInt(10 ** (length - 1), 10 ** length)
       .toString();
@@ -110,7 +115,7 @@ const forgotPassword = async (email: string) => {
   });
 };
 
-const sendSignupOtp = async (email: string, name: string) => {
+const resendSignupOtp = async (email: string) => {
 
   const existingUser = await prisma.user.findUnique({
     where: { email },
@@ -144,59 +149,54 @@ const sendSignupOtp = async (email: string, name: string) => {
     subject: "Verify Your Account",
     templateName: "otp",
     templateData: {
-      name,
+      name:existingUser?.name || "User",
       otp,
     },
   });
 
   return {
-    message: "OTP sent successfully",
+    message: "OTP resend successfully",
   };
 };
 
-const verifySignupOtp = async (payload: ISignupPayload) => {
-  const { email, otp } = payload;
-
-  const redisKey = `otp:signup:${email}`;
-
-  const storedOtp = await redisClient.get(redisKey);
-
-  if (!storedOtp) {
-    throw new AppError(400, "OTP expired or not found");
-  }
-
-  if (storedOtp !== otp) {
-    throw new AppError(400, "Invalid OTP");
-  }
-
-  const existingUser = await prisma.user.findUnique({
+const verifySignupOtp = async (email: string, otp: string) => {
+  const user = await prisma.user.findUnique({
     where: { email },
   });
 
-  if (existingUser && existingUser.isVerified) {
-    throw new AppError(400, "User already verified");
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
   }
 
-//   const hashedPassword = await bcrypt.hash(password, 10);
+  if (user.isVerified) {
+    throw new AppError(httpStatus.BAD_REQUEST, "User already verified");
+  }
 
-  const user = await prisma.user.update({
+  const redisKey = `otp:signup:${email}`;
+  const storedOtp = await redisClient.get(redisKey);
+
+  if (!storedOtp) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "OTP expired or not found"
+    );
+  }
+
+  if (storedOtp !== otp) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Invalid OTP");
+  }
+
+  await redisClient.del(redisKey);
+
+  const updatedUser = await prisma.user.update({
     where: { email },
     data: {
-    //   name,
-    //   email,
-    //   password: hashedPassword,
       isVerified: true,
     },
   });
 
-  await redisClient.del(redisKey);
-
-  return {
-    message: "User registered successfully",
-    user,
-  };
+  return updatedUser;
 };
-
 const setPassword = async (userId: string, plainPassword: string) => {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -286,6 +286,6 @@ export const AuthServices = {
   setPassword,
   forgotPassword,
   resetPassword,
-  sendSignupOtp,
+  resendSignupOtp,
   verifySignupOtp,
 };

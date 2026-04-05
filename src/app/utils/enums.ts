@@ -13,11 +13,12 @@ export enum PlanType {
   ENTERPRISE = "ENTERPRISE",
 }
 
-export enum SubscriptionStatus {
-  ACTIVE = "ACTIVE",
-  INACTIVE = "INACTIVE",
-  CANCELLED = "CANCELLED",
-}
+// export enum SubscriptionStatus {
+//   ACTIVE = "ACTIVE",
+//   INACTIVE = "INACTIVE",
+//   TRIALING = "TRIALING",
+//   CANCELLED = "CANCELLED",
+// }
 
 export enum ChannelType {
   WHATSAPP = "WHATSAPP",

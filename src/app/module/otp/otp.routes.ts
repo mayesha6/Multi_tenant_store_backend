@@ -6,5 +6,5 @@ const router = express.Router();
 
 
 
-router.post("/verify-reset", OTPController.verifyResetOtp);
+router.post("/verify-reset-password", OTPController.verifyResetOtp);
 export const OtpRoutes = router;

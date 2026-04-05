@@ -12,9 +12,12 @@ import { AuthProvider, UserRole, IsActive, Prisma } from "@prisma/client";
 import type { IUser } from "./user.interface";
 import { QueryBuilder } from "../../utils/QueryBuilder";
 import { userSearchableFields } from "./user.constant";
+import { generateOtp } from "../otp/otp.services";
+import { redisClient } from "../../config/redis.config";
+import { sendEmail } from "../../utils/sendEmail";
 
 const createUser = async (payload: IUser) => {
-  const { email, password, name, phone, picture, address, tenantId, role } = payload;
+  const { email, password, name, phone, picture, address, tenantId, role, ...rest } = payload;
 
   const isUserExist = await prisma.user.findUnique({
     where: { email },
@@ -48,6 +51,22 @@ const user = await prisma.user.create({
     },
   });
 
+  const redisKey = `otp:signup:${email}`;
+  const otp = generateOtp();
+
+  await redisClient.set(redisKey, otp, {
+    expiration: { type: "EX", value: 120 },
+  });
+
+  await sendEmail({
+    to: email,
+    subject: "Account Verification OTP",
+    templateName: "otp",
+    templateData: {
+      name: user.name,
+      otp,
+    },
+  });
 
   return user;
 };
@@ -72,7 +91,6 @@ const getAllUsers = async (query: Record<string, string>) => {
       isActive: true,
       isDeleted: true,
       isVerified: true,
-      isSubscribed: true,
       picture: true,
       phone: true,
       address: true,

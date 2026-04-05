@@ -104,18 +104,15 @@ const changePassword = catchAsync(
     });
   }
 );
-const resetPassword = catchAsync(
+export const resetPassword = catchAsync(
   async (req: Request, res: Response) => {
-    const { resetToken, newPassword } = req.body;
+    const { email, otp, newPassword, confirmPassword } = req.body;
 
-    await AuthServices.resetPassword(
-      resetToken,
-      newPassword
-    );
+    await AuthServices.resetPassword(email, otp, newPassword, confirmPassword);
 
     sendResponse(res, {
       success: true,
-      statusCode: 200,
+      statusCode: httpStatus.OK,
       message: "Password reset successfully",
       data: null,
     });
@@ -137,7 +134,7 @@ const setPassword = catchAsync(
   }
 );
 const forgotPassword = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response) => {
     const { email } = req.body;
 
     await AuthServices.forgotPassword(email);
@@ -145,16 +142,16 @@ const forgotPassword = catchAsync(
     sendResponse(res, {
       success: true,
       statusCode: httpStatus.OK,
-      message: "Email Sent Successfully",
+      message: "OTP sent successfully",
       data: null,
     });
   }
 );
-const sendSignupOtp = catchAsync(
+const resendSignupOtp = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const { email, name } = req.body;
+    const { email } = req.body;
 
-    await AuthServices.sendSignupOtp(email, name);
+    await AuthServices.resendSignupOtp(email);
 
     sendResponse(res, {
       success: true,
@@ -169,16 +166,16 @@ const verifySignupOtp = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { email, otp } = req.body;
 
-    const user = await AuthServices.verifySignupOtp({ email, otp });
+    const user = await AuthServices.verifySignupOtp( email, otp );
 
     sendResponse(res, {
       success: true,
       statusCode: httpStatus.CREATED,
       message: "User verified successfully",
       data: {
-        id: user.user.id,
-        email: user.user.email,
-        isVerified: user.user.isVerified,
+        id: user.id,
+        email: user.email,
+        isVerified: user.isVerified,
       },
     });
   }
@@ -215,6 +212,6 @@ export const AuthControllers = {
   forgotPassword,
   changePassword,
   googleCallbackController,
-  sendSignupOtp,
+  resendSignupOtp,
   verifySignupOtp,
 };

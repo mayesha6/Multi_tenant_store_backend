@@ -7,18 +7,16 @@ import { SubscriptionControllers } from "./subscription.controller";
 
 const router = Router();
 
-// Get all subscriptions (admin only)
 router.get(
   "/",
   checkAuth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OWNER),
   SubscriptionControllers.getAllSubscriptions
 );
 
-
-// Create checkout session for tenant
+// FIX: checkout uses logged-in user's tenant, not arbitrary tenantId from body
 router.post(
   "/checkout",
-  checkAuth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OWNER),
+  checkAuth(UserRole.OWNER, UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.VIEWER),
   validateRequest(createCheckoutSessionZodSchema),
   SubscriptionControllers.createCheckoutSession
 );

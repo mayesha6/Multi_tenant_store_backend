@@ -7,7 +7,7 @@ import prisma from "../../lib/prisma";
 
 // const OTP_EXPIRATION = 2 * 60 // 2minute
 
-const generateOtp = (length = 6) => {
+export const generateOtp = (length = 6) => {
     //6 digit otp
     const otp = crypto.randomInt(10 ** (length - 1), 10 ** length).toString()
     return otp
@@ -39,21 +39,7 @@ const verifyResetOtp = async (email: string, otp: string) => {
     throw new AppError(401, "User is not verified");
   }
 
-  const jwtPayload = {
-    userId: user.id,
-    email: user.email,
-    role: user.role,
-  };
-
-  const resetToken = jwt.sign(
-    jwtPayload,
-    envVars.JWT_ACCESS_SECRET,
-    { expiresIn: "10m" }
-  );
-
-  await redisClient.del([redisKey]);
-
-  return resetToken;
+  return null;
 };
 
 
