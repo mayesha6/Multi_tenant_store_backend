@@ -24,20 +24,22 @@ const createConversation = catchAsync(
 );
 
 const getAllConversations = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const user = req.user as JwtPayload
-    const tenantId = user.tenantId;
+  async (req: Request, res: Response) => {
+    const user = req.user as JwtPayload;
+    const userId = user.userId;
+
     const result = await ConversationServices.getAllConversations(
-      req.query,
-      tenantId
+      req.query as Record<string, string>,
+      user.tenantId,
+      userId 
     );
 
     sendResponse(res, {
       success: true,
       statusCode: httpStatus.OK,
       message: "Conversations fetched successfully",
-      meta: result.meta,
       data: result.data,
+      meta: result.meta,
     });
   }
 );

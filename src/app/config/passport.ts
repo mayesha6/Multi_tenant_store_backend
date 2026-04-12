@@ -22,8 +22,8 @@ passport.use(
           include: { auths: true },
         });
 
-        if (!user) return done("User does not exist");
-        if (!user.isVerified) return done("User is not verified");
+        if (!user) return done(null, false, { message: "User does not exist" });
+        if (!user.isVerified) return done(null, false, { message: "User is not verified" });
         if (user.isActive === IsActive.BLOCKED || user.isActive === IsActive.INACTIVE) {
           return done(`User is ${user.isActive}`);
         }

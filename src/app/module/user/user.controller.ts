@@ -21,8 +21,11 @@ const createUser = catchAsync(
 const getAllUsers = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const query = req.query;
+    const decodedToken = req.user as JwtPayload;
+
     const result = await UserServices.getAllUsers(
-      query as Record<string, string>
+      query as Record<string, string>,
+      decodedToken
     );
 
     sendResponse(res, {
@@ -52,7 +55,10 @@ const getMe = catchAsync(
 const getSingleUser = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const id = req.params.id;
-    const result = await UserServices.getSingleUser(id as string);
+    const decodedToken = req.user as JwtPayload;
+
+    const result = await UserServices.getSingleUser(id as string, decodedToken);
+
     sendResponse(res, {
       success: true,
       statusCode: httpStatus.OK,
@@ -89,28 +95,6 @@ export const updateMyProfile = catchAsync(
     const userId = decodedToken.userId;
 
     const payload: any = { ...req.body };
-
-    if (payload.travelInterests) {
-      if (typeof payload.travelInterests === "string") {
-        payload.travelInterests = payload.travelInterests
-          .split(",")
-          .map((v: string) => v.trim())
-          .filter((x: string) => x);
-      } else if (!Array.isArray(payload.travelInterests)) {
-        payload.travelInterests = [];
-      }
-    }
-
-    if (payload.visitedCountries) {
-      if (typeof payload.visitedCountries === "string") {
-        payload.visitedCountries = payload.visitedCountries
-          .split(",")
-          .map((v: string) => v.trim())
-          .filter((x: string) => x);
-      } else if (!Array.isArray(payload.visitedCountries)) {
-        payload.visitedCountries = [];
-      }
-    }
 
     const updatedUser = await UserServices.updateMyProfile(
       userId,

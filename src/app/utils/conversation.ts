@@ -1,5 +1,6 @@
-import { ConversationChannel } from "@prisma/client";
+import { ConversationChannel, ConversationStatus } from "@prisma/client";
 import prisma from "../lib/prisma";
+
 
 interface IFindOrCreateConversationPayload {
   tenantId: string;
@@ -8,6 +9,10 @@ interface IFindOrCreateConversationPayload {
   subject?: string | null;
 }
 
+/**
+ * একই contact + channel এর open/pending conversation থাকলে reuse করবে
+ * না থাকলে নতুন conversation create করবে
+ */
 export const findOrCreateOpenConversation = async (
   payload: IFindOrCreateConversationPayload
 ) => {
@@ -19,7 +24,7 @@ export const findOrCreateOpenConversation = async (
       contactId,
       channel,
       status: {
-        in: ["OPEN", "PENDING"],
+        in: [ConversationStatus.OPEN, ConversationStatus.PENDING],
       },
       isDeleted: false,
     },
@@ -35,6 +40,7 @@ export const findOrCreateOpenConversation = async (
         contactId,
         channel,
         subject: subject ?? null,
+        status: ConversationStatus.OPEN,
       },
     });
   }

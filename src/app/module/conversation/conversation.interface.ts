@@ -48,8 +48,14 @@ export interface IConversationQuery {
   status?: ConversationStatus;
   channel?: ConversationChannel;
   assignedToId?: string;
+
+  assigned?: "me";
+  unassigned?: "true";
+  unread?: "true";
+
   page?: string;
   limit?: string;
+  userId?: string;
 }
 
 export interface ISendMessagePayload {

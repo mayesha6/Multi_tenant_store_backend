@@ -16,7 +16,7 @@ router.get(
 // FIX: checkout uses logged-in user's tenant, not arbitrary tenantId from body
 router.post(
   "/checkout",
-  checkAuth(UserRole.OWNER, UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.VIEWER),
+  checkAuth(UserRole.OWNER, UserRole.ADMIN, UserRole.SUPER_ADMIN),
   validateRequest(createCheckoutSessionZodSchema),
   SubscriptionControllers.createCheckoutSession
 );

@@ -17,7 +17,10 @@ import { redisClient } from "../../config/redis.config";
 import { sendEmail } from "../../utils/sendEmail";
 
 const createUser = async (payload: IUser) => {
-  const { email, password, name, phone, picture, address, tenantId, role, ...rest } = payload;
+  // SECURITY:
+  // Never trust role/tenantId from public registration payload.
+  // New public users always start as VIEWER and without tenant.
+  const { email, password, name, phone, picture, address } = payload;
 
   const isUserExist = await prisma.user.findUnique({
     where: { email },
@@ -32,7 +35,7 @@ const createUser = async (payload: IUser) => {
     Number(envVars.BCRYPT_SALT_ROUND)
   );
 
-const user = await prisma.user.create({
+  const user = await prisma.user.create({
     data: {
       email,
       password: hashedPassword,
@@ -40,8 +43,15 @@ const user = await prisma.user.create({
       phone: phone ?? null,
       picture: picture ?? null,
       address: address ?? null,
-      tenantId: tenantId ?? null,
-      role,
+
+      // SECURITY:
+      // public signup users should not be placed in a tenant directly
+      tenantId: null,
+
+      // SECURITY:
+      // fixed safe default role
+      role: UserRole.VIEWER,
+
       auths: {
         create: {
           provider: AuthProvider.credentials,
@@ -71,7 +81,10 @@ const user = await prisma.user.create({
   return user;
 };
 
-const getAllUsers = async (query: Record<string, string>) => {
+const getAllUsers = async (
+  query: Record<string, string>,
+  currentUser: JwtPayload
+) => {
   const queryBuilder = new QueryBuilder<Prisma.UserWhereInput>(query);
 
   const prismaQuery = queryBuilder
@@ -81,6 +94,26 @@ const getAllUsers = async (query: Record<string, string>) => {
     .fields()
     .paginate()
     .build();
+
+  // Multi-tenant safety:
+  // SUPER_ADMIN can view all users
+  // OWNER/ADMIN can only view users from their own tenant
+  if (currentUser.role !== UserRole.SUPER_ADMIN) {
+    if (!currentUser.tenantId) {
+      throw new AppError(httpStatus.BAD_REQUEST, "User has no tenant");
+    }
+
+    prismaQuery.where = {
+      ...(prismaQuery.where || {}),
+      tenantId: currentUser.tenantId,
+      isDeleted: false,
+    };
+  } else {
+    prismaQuery.where = {
+      ...(prismaQuery.where || {}),
+      isDeleted: false,
+    };
+  }
 
   if (!prismaQuery.select) {
     prismaQuery.select = {
@@ -94,6 +127,7 @@ const getAllUsers = async (query: Record<string, string>) => {
       picture: true,
       phone: true,
       address: true,
+      tenantId: true,
       createdAt: true,
       updatedAt: true,
     };
@@ -128,14 +162,19 @@ const getMe = async (userId: string) => {
       picture: true,
       phone: true,
       address: true,
+      tenantId: true,
       createdAt: true,
     },
   });
 
+  if (!user || user.isDeleted) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
+  }
+
   return { data: user };
 };
 
-const getSingleUser = async (id: string) => {
+const getSingleUser = async (id: string, currentUser: JwtPayload) => {
   const user = await prisma.user.findUnique({
     where: { id },
     select: {
@@ -149,9 +188,22 @@ const getSingleUser = async (id: string) => {
       picture: true,
       phone: true,
       address: true,
+      tenantId: true,
       createdAt: true,
     },
   });
+
+  if (!user || user.isDeleted) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  // SUPER_ADMIN can access anyone
+  if (currentUser.role !== UserRole.SUPER_ADMIN) {
+    // same tenant only
+    if (!currentUser.tenantId || user.tenantId !== currentUser.tenantId) {
+      throw new AppError(httpStatus.FORBIDDEN, "You are not authorized");
+    }
+  }
 
   return { data: user };
 };
@@ -165,28 +217,48 @@ const updateUser = async (
     where: { id: userId },
   });
 
-  if (!existingUser) {
+  if (!existingUser || existingUser.isDeleted) {
     throw new AppError(httpStatus.NOT_FOUND, "User Not Found");
   }
 
+  // VIEWER can only update self basic profile fields
   if (decodedToken.role === UserRole.VIEWER) {
     if (userId !== decodedToken.userId) {
-      throw new AppError(401, "You are not authorized");
+      throw new AppError(httpStatus.UNAUTHORIZED, "You are not authorized");
     }
   }
 
+  // Non-super-admin users must stay inside their own tenant boundary
+  if (decodedToken.role !== UserRole.SUPER_ADMIN) {
+    if (!decodedToken.tenantId || existingUser.tenantId !== decodedToken.tenantId) {
+      throw new AppError(httpStatus.FORBIDDEN, "You are not authorized");
+    }
+  }
+
+  // ADMIN cannot update SUPER_ADMIN
   if (
     decodedToken.role === UserRole.ADMIN &&
     existingUser.role === UserRole.SUPER_ADMIN
   ) {
-    throw new AppError(401, "You are not authorized");
+    throw new AppError(httpStatus.UNAUTHORIZED, "You are not authorized");
   }
 
+  // VIEWER cannot update system/security fields
   if (
     decodedToken.role === UserRole.VIEWER &&
-    (payload.role || payload.isActive || payload.isDeleted || payload.isVerified)
+    (payload.role ||
+      payload.isActive ||
+      payload.isDeleted ||
+      payload.isVerified ||
+      payload.tenantId)
   ) {
     throw new AppError(httpStatus.FORBIDDEN, "You are not authorized");
+  }
+
+  // SECURITY:
+  // Prevent tenant reassignment through generic update route
+  if (payload.tenantId !== undefined && decodedToken.role !== UserRole.SUPER_ADMIN) {
+    throw new AppError(httpStatus.FORBIDDEN, "Tenant reassignment is not allowed");
   }
 
   const updatedUser = await prisma.user.update({
@@ -207,14 +279,22 @@ const updateMyProfile = async (
     where: { id: userId },
   });
 
-  if (!user) throw new AppError(404, "User not found");
-
-  if (
-    decodedToken.role === UserRole.VIEWER &&
-    decodedToken.userId !== userId
-  ) {
-    throw new AppError(403, "You are not authorized");
+  if (!user || user.isDeleted) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
   }
+
+  if (decodedToken.userId !== userId) {
+    throw new AppError(httpStatus.FORBIDDEN, "You are not authorized");
+  }
+
+  // SECURITY:
+  // Block sensitive/system fields from self-profile update
+  delete payload.role;
+  delete payload.isActive;
+  delete payload.isDeleted;
+  delete payload.isVerified;
+  delete payload.tenantId;
+  delete payload.auths;
 
   if (payload.password) {
     payload.password = await bcryptjs.hash(
@@ -245,14 +325,25 @@ const updateMyProfile = async (
 };
 
 const deleteUserById = async (userId: string) => {
-    // Check if user exists
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new AppError(httpStatus.NOT_FOUND, "User not found");
+  // Check if user exists
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
 
-    // Delete the user
-    await prisma.user.delete({ where: { id: userId } });
+  if (!user || user.isDeleted) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
+  }
 
-    return { message: "User deleted successfully" };
+  // Soft delete for SaaS safety
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      isDeleted: true,
+      isActive: IsActive.INACTIVE,
+    },
+  });
+
+  return { message: "User deleted successfully" };
 };
 
 export const UserServices = {

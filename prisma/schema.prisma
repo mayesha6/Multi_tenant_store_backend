@@ -269,6 +269,7 @@ model MessageWebhookEvent {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
+
 enum UserRole {
   ADMIN
   SUPER_ADMIN

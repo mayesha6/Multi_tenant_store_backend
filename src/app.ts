@@ -9,6 +9,7 @@ import { globalErrorHandler } from "./app/middlewares/globalErrorHandler";
 import notFound from "./app/middlewares/notFound";
 import { router } from "./app/routes";
 import { stripeWebhook } from "./app/module/webhook/webhook.controller";
+import { MessageWebhookController } from "./app/module/messageWebhook/messageWebhook.controller";
 
 
 const app = express()
@@ -18,6 +19,16 @@ app.post(
     express.raw({ type: "application/json" }),
     stripeWebhook
 )
+
+app.use(
+  "/api/v1/webhooks/incoming-message",
+  express.json({
+    verify: (req: any, res, buf) => {
+      req.rawBody = buf;
+    },
+  }),
+  MessageWebhookController.receiveIncomingMessageWebhook
+);
    
 app.use(expressSession({
     secret: envVars.EXPRESS_SESSION_SECRET,

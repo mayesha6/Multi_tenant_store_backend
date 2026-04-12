@@ -4,6 +4,14 @@ import { stripe } from "../../lib/stripe";
 import AppError from "../../errorHelpers/AppError";
 import httpStatus from "http-status-codes";
 
+const normalizeSlug = (value: string) => {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "");
+};
+
 const createTenant = async (userId: string, payload: any) => {
   return prisma.$transaction(async (tx) => {
     const user = await tx.user.findUnique({
@@ -14,7 +22,6 @@ const createTenant = async (userId: string, payload: any) => {
       throw new AppError(httpStatus.NOT_FOUND, "User not found");
     }
 
-    // FIX: prevent one user from creating multiple workspaces if your app supports one tenant per owner
     if (user.tenantId) {
       throw new AppError(
         httpStatus.BAD_REQUEST,
@@ -22,15 +29,16 @@ const createTenant = async (userId: string, payload: any) => {
       );
     }
 
+    const normalizedSlug = normalizeSlug(payload.slug);
+
     const existingSlug = await tx.tenant.findUnique({
-      where: { slug: payload.slug },
+      where: { slug: normalizedSlug },
     });
 
     if (existingSlug) {
       throw new AppError(httpStatus.BAD_REQUEST, "Slug already exists");
     }
 
-    // FIX: create Stripe customer for tenant, not for user signup step
     const stripeCustomer = await stripe.customers.create({
       name: payload.name,
       email: user.email,
@@ -39,16 +47,15 @@ const createTenant = async (userId: string, payload: any) => {
     const tenant = await tx.tenant.create({
       data: {
         name: payload.name,
-        slug: payload.slug,
+        slug: normalizedSlug,
         industry: payload.industry,
         teamSize: payload.teamSize,
         websiteUrl: payload.websiteUrl,
         stripeCustomerId: stripeCustomer.id,
-        onboardingStep: 2, // FIX: after workspace creation
+        onboardingStep: 2,
       },
     });
 
-    // FIX: assign creator user to this tenant and promote to OWNER
     await tx.user.update({
       where: { id: user.id },
       data: {
@@ -103,6 +110,17 @@ const updateMyTenant = async (userId: string, payload: any) => {
     throw new AppError(httpStatus.BAD_REQUEST, "User has no tenant");
   }
 
+  // SECURITY:
+  // Block billing/internal fields from normal tenant settings update
+  delete payload.stripeCustomerId;
+  delete payload.currentPlanId;
+  delete payload.currentSubId;
+  delete payload.isActive;
+
+  if (payload.slug) {
+    payload.slug = normalizeSlug(payload.slug);
+  }
+
   return prisma.tenant.update({
     where: { id: user.tenantId },
     data: payload,
@@ -110,6 +128,10 @@ const updateMyTenant = async (userId: string, payload: any) => {
 };
 
 const updateTenant = async (id: string, payload: any) => {
+  if (payload.slug) {
+    payload.slug = normalizeSlug(payload.slug);
+  }
+
   return prisma.tenant.update({
     where: { id },
     data: payload,

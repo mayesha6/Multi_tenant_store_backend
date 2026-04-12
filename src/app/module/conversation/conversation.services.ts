@@ -9,6 +9,7 @@ import prisma from "../../lib/prisma";
 import AppError from "../../errorHelpers/AppError";
 import type { IConversation, IConversationQuery, IMessage } from "./conversation.interface";
 import { emitToConversationRoom, emitToTenantRoom } from "../../lib/socketEmitter";
+import { QueryBuilder } from "../../utils/QueryBuilder";
 
 const createConversation = async (payload: IConversation, tenantId: string) => {
   const contact = await prisma.contact.findFirst({
@@ -71,20 +72,28 @@ const createConversation = async (payload: IConversation, tenantId: string) => {
     },
   });
 
-  /**
-   * কেন tenant room-এ emit করছি?
-   * - inbox list page open থাকলে নতুন conversation instantly show করা যাবে
-   */
   emitToTenantRoom(tenantId, "conversation_created", conversation);
 
   return conversation;
 };
 
-const getAllConversations = async (query: IConversationQuery, tenantId: string) => {
-  const { searchTerm, status, channel, assignedToId } = query;
-  const page = Number(query.page) || 1;
-  const limit = Number(query.limit) || 10;
-  const skip = (page - 1) * limit;
+const getAllConversations = async (
+  query: Record<string, string>,
+  tenantId: string,
+  userId: string
+) => {
+
+  const queryBuilder =
+    new QueryBuilder<Prisma.ConversationWhereInput>(query);
+
+  /**
+   * 🔥 STEP 2: base prisma query
+   */
+  const prismaQuery = queryBuilder
+    .filter()
+    .sort()
+    .paginate()
+    .build();
 
   const andConditions: Prisma.ConversationWhereInput[] = [
     {
@@ -93,31 +102,19 @@ const getAllConversations = async (query: IConversationQuery, tenantId: string) 
     },
   ];
 
-  if (status) {
-    andConditions.push({ status });
-  }
-
-  if (channel) {
-    andConditions.push({ channel });
-  }
-
-  if (assignedToId) {
-    andConditions.push({ assignedToId });
-  }
-
-  if (searchTerm) {
+  if (query.searchTerm) {
     andConditions.push({
       OR: [
         {
           subject: {
-            contains: searchTerm,
+            contains: query.searchTerm,
             mode: "insensitive",
           },
         },
         {
           contact: {
             name: {
-              contains: searchTerm,
+              contains: query.searchTerm,
               mode: "insensitive",
             },
           },
@@ -125,7 +122,7 @@ const getAllConversations = async (query: IConversationQuery, tenantId: string) 
         {
           contact: {
             email: {
-              contains: searchTerm,
+              contains: query.searchTerm,
               mode: "insensitive",
             },
           },
@@ -133,14 +130,14 @@ const getAllConversations = async (query: IConversationQuery, tenantId: string) 
         {
           contact: {
             phone: {
-              contains: searchTerm,
+              contains: query.searchTerm,
               mode: "insensitive",
             },
           },
         },
         {
           lastMessageText: {
-            contains: searchTerm,
+            contains: query.searchTerm,
             mode: "insensitive",
           },
         },
@@ -148,45 +145,82 @@ const getAllConversations = async (query: IConversationQuery, tenantId: string) 
     });
   }
 
-  const whereConditions: Prisma.ConversationWhereInput = {
+  if (query.status) {
+    andConditions.push({
+      status: query.status as any,
+    });
+  }
+
+  if (query.channel) {
+    andConditions.push({
+      channel: query.channel as any,
+    });
+  }
+
+  if (query.assigned === "me") {
+    andConditions.push({
+      assignedToId: userId,
+    });
+  }
+
+  if (query.unassigned === "true") {
+    andConditions.push({
+      assignedToId: null,
+    });
+  }
+
+  if (query.assignedToId) {
+    andConditions.push({
+      assignedToId: query.assignedToId,
+    });
+  }
+
+  if (query.unread === "true") {
+    andConditions.push({
+      unreadCount: {
+        gt: 0,
+      },
+    });
+  }
+
+
+  prismaQuery.where = {
     AND: andConditions,
+  };
+
+  const include = {
+    contact: true,
+    assignedTo: {
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+    },
   };
 
   const [data, total] = await Promise.all([
     prisma.conversation.findMany({
-      where: whereConditions,
-      include: {
-        contact: true,
-        assignedTo: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
+      ...prismaQuery,
+      include,
+      orderBy: prismaQuery.orderBy || {
+        lastMessageAt: "desc",
       },
-      orderBy: [
-        { lastMessageAt: "desc" },
-        { createdAt: "desc" },
-      ],
-      skip,
-      take: limit,
     }),
+
     prisma.conversation.count({
-      where: whereConditions,
+      where: prismaQuery.where,
     }),
   ]);
 
+  const meta = queryBuilder.getMeta(total);
+
   return {
-    meta: {
-      page,
-      limit,
-      total,
-      totalPage: Math.ceil(total / limit),
-    },
     data,
+    meta,
   };
 };
+
 
 const getSingleConversation = async (id: string, tenantId: string) => {
   const conversation = await prisma.conversation.findFirst({

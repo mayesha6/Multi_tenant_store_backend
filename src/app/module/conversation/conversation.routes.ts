@@ -19,7 +19,7 @@ router.post(
 );
 
 router.get(
-  "/all-conversations",
+  "/",
   checkAuth(...Object.values(UserRole)),
   ConversationControllers.getAllConversations
 );

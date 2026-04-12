@@ -3,47 +3,29 @@ import prisma from "../lib/prisma";
 
 interface IFindOrCreateContactFromWebhookPayload {
   tenantId: string;
-  name?: string | null;
-  email?: string | null;
-  phone?: string | null;
-  picture?: string | null;
-  address?: string | null;
-  source?: ContactSource;
-  metadata?: unknown;
+  name?: string;
+  email?: string;
+  phone?: string;
+  source?: ContactSource | any;
 }
 
 /**
- * কেন এই function?
- * - webhook payload different provider থেকে আসবে
- * - but আমাদের internal system contact resolve/create একভাবেই করবে
- * - conversation/message module later এই function use করবে
+ * webhook থেকে contact resolve/create
+ * priority:
+ * 1. phone match
+ * 2. email match
+ * 3. new contact create
  */
 export const findOrCreateContactFromWebhook = async (
   payload: IFindOrCreateContactFromWebhookPayload
 ) => {
-  const {
-    tenantId,
-    name,
-    email,
-    phone,
-    picture,
-    address,
-    source = ContactSource.MANUAL,
-    metadata,
-  } = payload;
+  const { tenantId, name, email, phone, source } = payload;
 
-  const normalizedEmail =
-    email == null ? null : email.trim() === "" ? null : email.trim().toLowerCase();
-
-  const normalizedPhone =
-    phone == null ? null : phone.trim() === "" ? null : phone.trim();
+  const normalizedEmail = email?.trim().toLowerCase();
+  const normalizedPhone = phone?.trim();
 
   let contact = null;
 
-  /**
-   * First priority: phone
-   * কারণ WhatsApp / SMS style integration এ phone বেশি reliable
-   */
   if (normalizedPhone) {
     contact = await prisma.contact.findFirst({
       where: {
@@ -54,10 +36,6 @@ export const findOrCreateContactFromWebhook = async (
     });
   }
 
-  /**
-   * Second priority: email
-   * email based channels এর জন্য useful
-   */
   if (!contact && normalizedEmail) {
     contact = await prisma.contact.findFirst({
       where: {
@@ -68,24 +46,14 @@ export const findOrCreateContactFromWebhook = async (
     });
   }
 
-  /**
-   * Contact না পেলে create করবো
-   */
   if (!contact) {
     contact = await prisma.contact.create({
       data: {
         tenantId,
-        name: name?.trim() || "Unknown Contact",
-        email: normalizedEmail,
-        phone: normalizedPhone,
-        picture: picture || null,
-        address: address || null,
-        source,
-        tags: [],
-        metadata:
-          metadata === undefined || metadata === null
-            ? undefined
-            : (metadata as any),
+        name: name || "Unknown Contact",
+        email: normalizedEmail || null,
+        phone: normalizedPhone || null,
+        source: source ?? ContactSource.MANUAL,
       },
     });
   }
