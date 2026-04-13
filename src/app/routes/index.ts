@@ -9,6 +9,7 @@ import { PlanRoutes } from "../module/plan/plan.routes"
 import { SubscriptionRoutes } from "../module/subscription/subscription.routes"
 import { TenantRoutes } from "../module/tenant/tenant.routes"
 import { ConversationRoutes } from "../module/conversation/conversation.routes"
+import { MessageRoutes } from "../module/message/message.routes"
 
 
 export const router = Router()
@@ -53,6 +54,10 @@ const moduleRoutes = [
     {
         path: "/conversations",
         route: ConversationRoutes,
+    },
+    {
+        path: "/messages",
+        route: MessageRoutes,
     },
 
 ]
