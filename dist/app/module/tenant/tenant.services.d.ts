@@ -1,14 +1,19 @@
 export declare const TenantService: {
-    createTenant: (payload: any) => Promise<{
+    createTenant: (userId: string, payload: any) => Promise<{
         id: string;
         name: string;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
-        planId: string | null;
         stripeCustomerId: string | null;
         slug: string;
-        subscriptionId: string | null;
+        industry: string | null;
+        teamSize: string | null;
+        websiteUrl: string | null;
+        onboardingStep: number;
+        onboardingCompleted: boolean;
+        currentPlanId: string | null;
+        currentSubId: string | null;
     }>;
     getAllTenant: () => Promise<{
         id: string;
@@ -16,10 +21,15 @@ export declare const TenantService: {
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
-        planId: string | null;
         stripeCustomerId: string | null;
         slug: string;
-        subscriptionId: string | null;
+        industry: string | null;
+        teamSize: string | null;
+        websiteUrl: string | null;
+        onboardingStep: number;
+        onboardingCompleted: boolean;
+        currentPlanId: string | null;
+        currentSubId: string | null;
     }[]>;
     getTenantById: (id: string) => Promise<{
         id: string;
@@ -27,21 +37,63 @@ export declare const TenantService: {
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
-        planId: string | null;
         stripeCustomerId: string | null;
         slug: string;
-        subscriptionId: string | null;
-    } | null>;
+        industry: string | null;
+        teamSize: string | null;
+        websiteUrl: string | null;
+        onboardingStep: number;
+        onboardingCompleted: boolean;
+        currentPlanId: string | null;
+        currentSubId: string | null;
+    }>;
+    getMyTenant: (userId: string) => Promise<{
+        id: string;
+        name: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        stripeCustomerId: string | null;
+        slug: string;
+        industry: string | null;
+        teamSize: string | null;
+        websiteUrl: string | null;
+        onboardingStep: number;
+        onboardingCompleted: boolean;
+        currentPlanId: string | null;
+        currentSubId: string | null;
+    }>;
+    updateMyTenant: (userId: string, payload: any) => Promise<{
+        id: string;
+        name: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        stripeCustomerId: string | null;
+        slug: string;
+        industry: string | null;
+        teamSize: string | null;
+        websiteUrl: string | null;
+        onboardingStep: number;
+        onboardingCompleted: boolean;
+        currentPlanId: string | null;
+        currentSubId: string | null;
+    }>;
     updateTenant: (id: string, payload: any) => Promise<{
         id: string;
         name: string;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
-        planId: string | null;
         stripeCustomerId: string | null;
         slug: string;
-        subscriptionId: string | null;
+        industry: string | null;
+        teamSize: string | null;
+        websiteUrl: string | null;
+        onboardingStep: number;
+        onboardingCompleted: boolean;
+        currentPlanId: string | null;
+        currentSubId: string | null;
     }>;
     deleteTenant: (id: string) => Promise<{
         id: string;
@@ -49,10 +101,15 @@ export declare const TenantService: {
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
-        planId: string | null;
         stripeCustomerId: string | null;
         slug: string;
-        subscriptionId: string | null;
+        industry: string | null;
+        teamSize: string | null;
+        websiteUrl: string | null;
+        onboardingStep: number;
+        onboardingCompleted: boolean;
+        currentPlanId: string | null;
+        currentSubId: string | null;
     }>;
 };
 //# sourceMappingURL=tenant.services.d.ts.map

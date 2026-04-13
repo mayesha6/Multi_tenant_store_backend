@@ -1,4 +1,3 @@
-import type { NextFunction, Request, Response } from "express";
 import { UserRole } from "@prisma/client";
-export declare const checkAuth: (...authRoles: UserRole[]) => (req: Request, res: Response, next: NextFunction) => Promise<void>;
+export declare const checkAuth: (...authRoles: UserRole[]) => (req: any, res: any, next: any) => Promise<any>;
 //# sourceMappingURL=checkAuth.d.ts.map

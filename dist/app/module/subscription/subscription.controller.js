@@ -1,57 +1,29 @@
+import { sendResponse } from "../../utils/sendResponse";
 import httpStatus from "http-status-codes";
 import { catchAsync } from "../../utils/catchAsync";
 import { SubscriptionServices } from "./subscription.services";
-import { sendResponse } from "../../utils/sendResponse";
-const createSubscription = catchAsync(async (req, res, next) => {
-    const subscription = await SubscriptionServices.createSubscription(req.body);
+const getAllSubscriptions = catchAsync(async (req, res) => {
+    const subscriptions = await SubscriptionServices.getAllSubscriptions(req.user);
+    sendResponse(res, {
+        success: true,
+        statusCode: httpStatus.OK,
+        message: "Subscriptions fetched successfully",
+        data: subscriptions,
+    });
+});
+const createCheckoutSession = catchAsync(async (req, res) => {
+    const { planId } = req.body;
+    const user = req.user;
+    const session = await SubscriptionServices.createCheckoutSession(user, planId);
     sendResponse(res, {
         success: true,
         statusCode: httpStatus.CREATED,
-        message: "Subscription created",
-        data: subscription
+        message: "Checkout session created successfully",
+        data: session,
     });
 });
-const getSubscriptionById = catchAsync(async (req, res) => {
-    const subscription = await SubscriptionServices.getSubscriptionById(req.params.id);
-    sendResponse(res, {
-        success: true,
-        statusCode: httpStatus.OK,
-        message: "Subscription retrieved successfully",
-        data: subscription
-    });
-});
-const getAllSubscriptions = catchAsync(async (_req, res, next) => {
-    const subscriptions = await SubscriptionServices.getAllSubscriptions();
-    sendResponse(res, {
-        success: true,
-        statusCode: httpStatus.OK,
-        message: "All subscriptions retrieved successfully",
-        data: subscriptions
-    });
-});
-const updateSubscription = catchAsync(async (req, res, next) => {
-    const subscription = await SubscriptionServices.updateSubscription(req.params.id, req.body);
-    sendResponse(res, {
-        success: true,
-        statusCode: httpStatus.OK,
-        message: "Subscription updated successfully",
-        data: subscription
-    });
-});
-const cancelSubscription = catchAsync(async (req, res, next) => {
-    const subscription = await SubscriptionServices.cancelSubscription(req.params.id);
-    sendResponse(res, {
-        success: true,
-        statusCode: httpStatus.OK,
-        message: "Subscription canceled",
-        data: subscription
-    });
-});
-export const SubscriptionController = {
-    createSubscription,
-    getSubscriptionById,
+export const SubscriptionControllers = {
     getAllSubscriptions,
-    updateSubscription,
-    cancelSubscription,
+    createCheckoutSession,
 };
 //# sourceMappingURL=subscription.controller.js.map

@@ -1,29 +1,24 @@
 import { envVars } from "../../config/env";
 import { stripe } from "../../lib/stripe";
-import { StripeWebhookServices } from "./webhook.services";
-const handleWebhook = async (req, res, next) => {
-    const sig = req.headers["stripe-signature"];
-    let event;
+import { StripeWebhookService } from "./webhook.services";
+export const stripeWebhook = async (req, res, next) => {
     try {
-        event = stripe.webhooks.constructEvent(req.body, sig, envVars.STRIPE_WEBHOOK_SECRET);
+        const sig = req.headers["stripe-signature"];
+        if (!sig) {
+            return res.status(400).json({
+                success: false,
+                message: "Missing stripe-signature header",
+            });
+        }
+        const event = stripe.webhooks.constructEvent(req.body, sig, envVars.STRIPE_WEBHOOK_SECRET);
+        await StripeWebhookService.handleEvent(event);
+        return res.status(200).json({ received: true });
     }
-    catch (err) {
-        return res.status(400).send(`Webhook Error: ${err.message}`);
+    catch (error) {
+        return res.status(400).json({
+            success: false,
+            message: `Webhook Error: ${error.message}`,
+        });
     }
-    switch (event.type) {
-        case "checkout.session.completed":
-            await StripeWebhookServices.handleCheckoutCompleted(event.data.object);
-            break;
-        case "customer.subscription.updated":
-            await StripeWebhookServices.handleSubscriptionUpdated(event.data.object);
-            break;
-        case "customer.subscription.deleted":
-            await StripeWebhookServices.handleSubscriptionDeleted(event.data.object);
-            break;
-    }
-    res.json({ received: true });
-};
-export const StripeWebhookControllers = {
-    handleWebhook
 };
 //# sourceMappingURL=webhook.controller.js.map

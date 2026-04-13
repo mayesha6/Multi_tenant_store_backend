@@ -3,10 +3,11 @@ import { envVars } from "../config/env";
 import AppError from "../errorHelpers/AppError";
 import { verifyToken } from "../utils/jwt";
 import prisma from "../lib/prisma";
-import { IsActive, PaymentStatus, UserRole } from "@prisma/client";
-import { SubscriptionStatus } from "../utils/enums";
+import { IsActive, UserRole } from "@prisma/client";
+import { SubscriptionStatus } from "@prisma/client";
 export const checkAuth = (...authRoles) => async (req, res, next) => {
     try {
+        // ✅ Get token (cookie OR header)
         const accessToken = req.cookies?.accessToken ||
             req.headers.authorization?.split(" ")[1];
         if (!accessToken) {
@@ -29,37 +30,61 @@ export const checkAuth = (...authRoles) => async (req, res, next) => {
         if (user.isDeleted) {
             throw new AppError(httpStatus.FORBIDDEN, "User deleted");
         }
-        // Role check
+        // ✅ Role check
         if (authRoles.length && !authRoles.includes(user.role)) {
             throw new AppError(httpStatus.FORBIDDEN, "You are not permitted to access this route");
         }
-        // Super admin bypass tenant + subscription check
-        if (user.role !== UserRole.SUPER_ADMIN) {
-            // Tenant isolation check
-            if (!user.tenantId) {
-                throw new AppError(httpStatus.FORBIDDEN, "User not assigned to any tenant");
-            }
+        // ✅ Attach base user info
+        req.user = {
+            userId: user.id,
+            role: user.role,
+            tenantId: user.tenantId,
+        };
+        // ✅ SUPER ADMIN bypass everything
+        if (user.role === UserRole.SUPER_ADMIN) {
+            return next();
+        }
+        // -----------------------------
+        // 🧠 ONBOARDING SAFE LOGIC
+        // -----------------------------
+        const url = req.originalUrl;
+        // ✅ Routes allowed without tenant (onboarding phase)
+        const allowWithoutTenant = [
+            "/api/v1/tenant", // create workspace
+            "/api/v1/plan", // view plans
+            "/api/v1/subscription/checkout" // optional
+        ];
+        const isAllowedWithoutTenant = allowWithoutTenant.some((route) => url.startsWith(route));
+        // ❌ Block if no tenant AND not allowed route
+        if (!user.tenantId && !isAllowedWithoutTenant) {
+            throw new AppError(httpStatus.FORBIDDEN, "User not assigned to any tenant");
+        }
+        // -----------------------------
+        // 💳 SUBSCRIPTION CHECK
+        // -----------------------------
+        // ✅ Skip subscription check for onboarding routes
+        const skipSubscriptionCheck = [
+            "/api/v1/tenant",
+            "/api/v1/plan",
+            "/api/v1/subscription",
+            "/api/v1/subscription/checkout",
+        ];
+        const shouldSkipSubscription = skipSubscriptionCheck.some((route) => url.startsWith(route));
+        if (!shouldSkipSubscription && user.tenantId) {
             const subscription = await prisma.subscription.findFirst({
                 where: {
                     tenantId: user.tenantId,
-                    status: SubscriptionStatus.ACTIVE,
+                    status: {
+                        in: [
+                            SubscriptionStatus.ACTIVE,
+                            SubscriptionStatus.TRIALING,
+                        ],
+                    },
                 },
             });
             if (!subscription) {
-                throw new AppError(httpStatus.FORBIDDEN, "Subscription inactive. Please renew.");
+                throw new AppError(httpStatus.FORBIDDEN, "Subscription inactive. Please upgrade your plan.");
             }
-            // Attach tenant scoped data
-            req.user = {
-                userId: user.id,
-                role: user.role,
-                tenantId: user.tenantId,
-            };
-        }
-        else {
-            req.user = {
-                userId: user.id,
-                role: user.role,
-            };
         }
         next();
     }

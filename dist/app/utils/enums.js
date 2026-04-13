@@ -13,12 +13,12 @@ export var PlanType;
     PlanType["PRO"] = "PRO";
     PlanType["ENTERPRISE"] = "ENTERPRISE";
 })(PlanType || (PlanType = {}));
-export var SubscriptionStatus;
-(function (SubscriptionStatus) {
-    SubscriptionStatus["ACTIVE"] = "ACTIVE";
-    SubscriptionStatus["INACTIVE"] = "INACTIVE";
-    SubscriptionStatus["CANCELLED"] = "CANCELLED";
-})(SubscriptionStatus || (SubscriptionStatus = {}));
+// export enum SubscriptionStatus {
+//   ACTIVE = "ACTIVE",
+//   INACTIVE = "INACTIVE",
+//   TRIALING = "TRIALING",
+//   CANCELLED = "CANCELLED",
+// }
 export var ChannelType;
 (function (ChannelType) {
     ChannelType["WHATSAPP"] = "WHATSAPP";

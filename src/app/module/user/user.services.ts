@@ -46,7 +46,7 @@ const createUser = async (payload: IUser) => {
 
       // SECURITY:
       // public signup users should not be placed in a tenant directly
-      tenantId: null,
+      tenantId: payload.tenantId || null,
 
       // SECURITY:
       // fixed safe default role

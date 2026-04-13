@@ -14,12 +14,10 @@ export declare const UserServices: {
         isActive: import("@prisma/client").$Enums.IsActive;
         isVerified: boolean;
         role: import("@prisma/client").$Enums.UserRole;
-        isSubscribed: boolean;
-        planExpiration: Date | null;
         createdAt: Date;
         updatedAt: Date;
     }>;
-    getAllUsers: (query: Record<string, string>) => Promise<{
+    getAllUsers: (query: Record<string, string>, currentUser: JwtPayload) => Promise<{
         data: {
             email: string;
             password: string | null;
@@ -33,8 +31,6 @@ export declare const UserServices: {
             isActive: import("@prisma/client").$Enums.IsActive;
             isVerified: boolean;
             role: import("@prisma/client").$Enums.UserRole;
-            isSubscribed: boolean;
-            planExpiration: Date | null;
             createdAt: Date;
             updatedAt: Date;
         }[];
@@ -53,14 +49,15 @@ export declare const UserServices: {
             phone: string | null;
             picture: string | null;
             address: string | null;
+            tenantId: string | null;
             isDeleted: boolean;
             isActive: import("@prisma/client").$Enums.IsActive;
             isVerified: boolean;
             role: import("@prisma/client").$Enums.UserRole;
             createdAt: Date;
-        } | null;
+        };
     }>;
-    getSingleUser: (id: string) => Promise<{
+    getSingleUser: (id: string, currentUser: JwtPayload) => Promise<{
         data: {
             email: string;
             id: string;
@@ -68,12 +65,13 @@ export declare const UserServices: {
             phone: string | null;
             picture: string | null;
             address: string | null;
+            tenantId: string | null;
             isDeleted: boolean;
             isActive: import("@prisma/client").$Enums.IsActive;
             isVerified: boolean;
             role: import("@prisma/client").$Enums.UserRole;
             createdAt: Date;
-        } | null;
+        };
     }>;
     updateUser: (userId: string, payload: any, decodedToken: JwtPayload) => Promise<{
         email: string;
@@ -88,8 +86,6 @@ export declare const UserServices: {
         isActive: import("@prisma/client").$Enums.IsActive;
         isVerified: boolean;
         role: import("@prisma/client").$Enums.UserRole;
-        isSubscribed: boolean;
-        planExpiration: Date | null;
         createdAt: Date;
         updatedAt: Date;
     }>;
@@ -106,10 +102,11 @@ export declare const UserServices: {
         isActive: import("@prisma/client").$Enums.IsActive;
         isVerified: boolean;
         role: import("@prisma/client").$Enums.UserRole;
-        isSubscribed: boolean;
-        planExpiration: Date | null;
         createdAt: Date;
         updatedAt: Date;
+    }>;
+    deleteUserById: (userId: string) => Promise<{
+        message: string;
     }>;
 };
 //# sourceMappingURL=user.services.d.ts.map

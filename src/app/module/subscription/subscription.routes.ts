@@ -9,14 +9,13 @@ const router = Router();
 
 router.get(
   "/",
-  checkAuth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OWNER),
+  checkAuth(UserRole.SUPER_ADMIN, UserRole.OWNER), // ❗ admin remove
   SubscriptionControllers.getAllSubscriptions
 );
 
-// FIX: checkout uses logged-in user's tenant, not arbitrary tenantId from body
 router.post(
   "/checkout",
-  checkAuth(UserRole.OWNER, UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  checkAuth(UserRole.OWNER), // ✅ only owner pays
   validateRequest(createCheckoutSessionZodSchema),
   SubscriptionControllers.createCheckoutSession
 );

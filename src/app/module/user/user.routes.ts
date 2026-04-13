@@ -9,14 +9,24 @@ import { UserRole } from "@prisma/client";
 
 const router = Router();
 
-router.post("/register",
-  validateRequest(createUserZodSchema), UserControllers.createUser);
+router.post(
+  "/register",
+  validateRequest(createUserZodSchema),
+  UserControllers.createUser
+);
+
 router.get(
   "/all-users",
-  checkAuth(UserRole.SUPER_ADMIN, UserRole.OWNER, UserRole.ADMIN),
+  checkAuth(UserRole.OWNER, UserRole.ADMIN, UserRole.SUPER_ADMIN), // ❗ refined
   UserControllers.getAllUsers
 );
-router.get("/me", checkAuth(...Object.values(UserRole)), UserControllers.getMe);
+
+router.get(
+  "/me",
+  checkAuth(...Object.values(UserRole)),
+  UserControllers.getMe
+);
+
 router.patch(
   "/update-my-profile",
   checkAuth(...Object.values(UserRole)),
@@ -25,21 +35,23 @@ router.patch(
   validateRequest(updateUserZodSchema),
   UserControllers.updateMyProfile
 );
+
 router.get(
   "/:id",
-  checkAuth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  checkAuth(UserRole.OWNER, UserRole.ADMIN, UserRole.SUPER_ADMIN),
   UserControllers.getSingleUser
 );
+
 router.patch(
   "/:id",
+  checkAuth(UserRole.OWNER, UserRole.ADMIN, UserRole.SUPER_ADMIN), // ❗ viewer remove
   validateRequest(updateUserZodSchema),
-  checkAuth(...Object.values(UserRole)),
   UserControllers.updateUser
 );
 
 router.delete(
   "/:id",
-  checkAuth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OWNER),
+  checkAuth(UserRole.OWNER, UserRole.SUPER_ADMIN),
   UserControllers.deleteUserById
 );
 

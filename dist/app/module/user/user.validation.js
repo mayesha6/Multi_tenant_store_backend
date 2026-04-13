@@ -28,8 +28,8 @@ export const createUserZodSchema = z.object({
         message: "Phone number must be valid for Bangladesh. Format: +8801XXXXXXXXX or 01XXXXXXXXX",
     })
         .optional(),
-    tenantId: z.string(),
     address: z.string().max(200, { message: "Address cannot exceed 200 characters." }).optional(),
+    tenantId: z.string().optional(),
 });
 export const updateUserZodSchema = z.object({
     name: z.string().min(2, { message: "Name must be at least 2 characters long." }).max(50, { message: "Name cannot exceed 50 characters." }).optional(),
@@ -45,19 +45,4 @@ export const updateUserZodSchema = z.object({
     address: z.string().max(200, { message: "Address cannot exceed 200 characters." }).optional(),
     picture: z.any().optional(),
 });
-// import { z } from "zod";
-// import { UserRole } from "@prisma/client";
-// export const createUserZodSchema = z.object({
-//   name: z.string().min(3),
-//   email: z.string().email(),
-//   password: z.string().min(6),
-//   role: z.enum(Object.values(UserRole) as [string, ...string[]]),
-//   tenantId: z.string().optional(),
-// });
-// export const updateUserZodSchema = z.object({
-//   name: z.string().min(3).optional(),
-//   email: z.string().email().optional(),
-//   password: z.string().min(6).optional(),
-//   role: z.enum(Object.values(UserRole) as [string, ...string[]]).optional(),
-// });
 //# sourceMappingURL=user.validation.js.map

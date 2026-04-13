@@ -5,8 +5,8 @@ export declare const ContentService: {
         updatedAt: Date;
         image: string | null;
         type: import("@prisma/client").$Enums.ContentType;
-        content: string;
         title: string;
+        content: string;
         order: number;
         isPublished: boolean;
     }[]>;
@@ -16,8 +16,8 @@ export declare const ContentService: {
         updatedAt: Date;
         image: string | null;
         type: import("@prisma/client").$Enums.ContentType;
-        content: string;
         title: string;
+        content: string;
         order: number;
         isPublished: boolean;
     }[]>;
@@ -27,8 +27,8 @@ export declare const ContentService: {
         updatedAt: Date;
         image: string | null;
         type: import("@prisma/client").$Enums.ContentType;
-        content: string;
         title: string;
+        content: string;
         order: number;
         isPublished: boolean;
     }>;
@@ -38,8 +38,8 @@ export declare const ContentService: {
         updatedAt: Date;
         image: string | null;
         type: import("@prisma/client").$Enums.ContentType;
-        content: string;
         title: string;
+        content: string;
         order: number;
         isPublished: boolean;
     }>;
@@ -49,8 +49,8 @@ export declare const ContentService: {
         updatedAt: Date;
         image: string | null;
         type: import("@prisma/client").$Enums.ContentType;
-        content: string;
         title: string;
+        content: string;
         order: number;
         isPublished: boolean;
     }>;

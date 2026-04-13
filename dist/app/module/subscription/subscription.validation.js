@@ -1,14 +1,6 @@
 import { z } from "zod";
-export const createSubscriptionZodSchema = z.object({
-    tenantId: z.string(),
-    planId: z.string(),
-    stripeSubId: z.string(),
-    startDate: z.date(),
-    endDate: z.date(),
-    intervalCount: z.number().optional(),
-});
-export const updateSubscriptionZodSchema = z.object({
-    status: z.enum(["ACTIVE", "CANCELED", "PAST_DUE"]).optional(),
-    endDate: z.date().optional(),
+export const createCheckoutSessionZodSchema = z.object({
+    // FIX: no tenantId from frontend body needed if using logged-in user's tenant
+    planId: z.string().min(1),
 });
 //# sourceMappingURL=subscription.validation.js.map

@@ -7,5 +7,6 @@ export declare const UserControllers: {
     getSingleUser: (req: Request, res: Response, next: NextFunction) => void;
     updateUser: (req: Request, res: Response, next: NextFunction) => void;
     updateMyProfile: (req: Request, res: Response, next: NextFunction) => void;
+    deleteUserById: (req: Request, res: Response, next: NextFunction) => void;
 };
 //# sourceMappingURL=user.controller.d.ts.map

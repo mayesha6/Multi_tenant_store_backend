@@ -33,6 +33,7 @@ interface EnvConfig {
     STRIPE_SECRET_KEY: string;
     STRIPE_PUBLISHABLE_KEY: string;
     STRIPE_WEBHOOK_SECRET: string;
+    MESSAGE_WEBHOOK_SECRET: string;
 }
 export declare const envVars: EnvConfig;
 export {};

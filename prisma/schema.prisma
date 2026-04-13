@@ -274,7 +274,6 @@ enum UserRole {
   ADMIN
   SUPER_ADMIN
   VIEWER
-  AGENT
   OWNER
   SUPPORT
 }

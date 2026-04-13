@@ -12,26 +12,24 @@ const router = Router();
 
 router.post(
   "/",
-  checkAuth(UserRole.SUPER_ADMIN, UserRole.ADMIN),
+  checkAuth(UserRole.SUPER_ADMIN), // ✅ only platform owner
   validateRequest(createPlanZodSchema),
   PlanControllers.createPlan
 );
 
-// Public or authenticated — depends on your app
 router.get("/", PlanControllers.getAllPlans);
 router.get("/:id", PlanControllers.getPlanById);
 
-// FIX: protect update route
 router.patch(
   "/:id",
-  checkAuth(UserRole.SUPER_ADMIN, UserRole.ADMIN),
+  checkAuth(UserRole.SUPER_ADMIN), // ❌ tenant admin cannot
   validateRequest(updatePlanZodSchema),
   PlanControllers.updatePlan
 );
 
 router.delete(
   "/:id",
-  checkAuth(UserRole.SUPER_ADMIN, UserRole.ADMIN),
+  checkAuth(UserRole.SUPER_ADMIN),
   PlanControllers.deletePlan
 );
 

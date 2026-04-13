@@ -1,9 +1,9 @@
-import type { Request, Response } from "express";
-export declare const ContactController: {
-    createContact: (req: Request, res: Response, next: import("express").NextFunction) => void;
-    getContacts: (req: Request, res: Response, next: import("express").NextFunction) => void;
-    getContactById: (req: Request, res: Response, next: import("express").NextFunction) => void;
-    updateContact: (req: Request, res: Response, next: import("express").NextFunction) => void;
-    deleteContact: (req: Request, res: Response, next: import("express").NextFunction) => void;
+import type { NextFunction, Request, Response } from "express";
+export declare const ContactControllers: {
+    createContact: (req: Request, res: Response, next: NextFunction) => void;
+    getAllContacts: (req: Request, res: Response, next: NextFunction) => void;
+    getSingleContact: (req: Request, res: Response, next: NextFunction) => void;
+    updateContact: (req: Request, res: Response, next: NextFunction) => void;
+    deleteContact: (req: Request, res: Response, next: NextFunction) => void;
 };
 //# sourceMappingURL=contact.controller.d.ts.map

@@ -7,13 +7,14 @@ const createUser = catchAsync(async (req, res, next) => {
     sendResponse(res, {
         success: true,
         statusCode: httpStatus.CREATED,
-        message: "User Created Successfully",
+        message: "User Created Successfully. OTP sent to email. Please verify your account.",
         data: user,
     });
 });
 const getAllUsers = catchAsync(async (req, res, next) => {
     const query = req.query;
-    const result = await UserServices.getAllUsers(query);
+    const decodedToken = req.user;
+    const result = await UserServices.getAllUsers(query, decodedToken);
     sendResponse(res, {
         success: true,
         statusCode: httpStatus.OK,
@@ -34,7 +35,8 @@ const getMe = catchAsync(async (req, res, next) => {
 });
 const getSingleUser = catchAsync(async (req, res, next) => {
     const id = req.params.id;
-    const result = await UserServices.getSingleUser(id);
+    const decodedToken = req.user;
+    const result = await UserServices.getSingleUser(id, decodedToken);
     sendResponse(res, {
         success: true,
         statusCode: httpStatus.OK,
@@ -58,28 +60,6 @@ export const updateMyProfile = catchAsync(async (req, res, next) => {
     const decodedToken = req.user;
     const userId = decodedToken.userId;
     const payload = { ...req.body };
-    if (payload.travelInterests) {
-        if (typeof payload.travelInterests === "string") {
-            payload.travelInterests = payload.travelInterests
-                .split(",")
-                .map((v) => v.trim())
-                .filter((x) => x);
-        }
-        else if (!Array.isArray(payload.travelInterests)) {
-            payload.travelInterests = [];
-        }
-    }
-    if (payload.visitedCountries) {
-        if (typeof payload.visitedCountries === "string") {
-            payload.visitedCountries = payload.visitedCountries
-                .split(",")
-                .map((v) => v.trim())
-                .filter((x) => x);
-        }
-        else if (!Array.isArray(payload.visitedCountries)) {
-            payload.visitedCountries = [];
-        }
-    }
     const updatedUser = await UserServices.updateMyProfile(userId, payload, decodedToken, req.file);
     sendResponse(res, {
         success: true,
@@ -88,12 +68,22 @@ export const updateMyProfile = catchAsync(async (req, res, next) => {
         data: updatedUser,
     });
 });
+const deleteUserById = catchAsync(async (req, res, next) => {
+    await UserServices.deleteUserById(req.params.id);
+    sendResponse(res, {
+        success: true,
+        statusCode: httpStatus.OK,
+        message: "User Deleted Successfully",
+        data: null,
+    });
+});
 export const UserControllers = {
     createUser,
     getAllUsers,
     getMe,
     getSingleUser,
     updateUser,
-    updateMyProfile
+    updateMyProfile,
+    deleteUserById
 };
 //# sourceMappingURL=user.controller.js.map

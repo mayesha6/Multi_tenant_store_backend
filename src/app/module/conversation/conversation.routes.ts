@@ -12,15 +12,15 @@ import {
 const router = Router();
 
 router.post(
-  "/create",
-  checkAuth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OWNER, UserRole.SUPPORT),
+  "/",
+  checkAuth(UserRole.OWNER, UserRole.ADMIN, UserRole.SUPPORT), // ❌ viewer no
   validateRequest(createConversationZodSchema),
   ConversationControllers.createConversation
 );
 
 router.get(
   "/",
-  checkAuth(...Object.values(UserRole)),
+  checkAuth(...Object.values(UserRole)), // ✅ all can see
   ConversationControllers.getAllConversations
 );
 
@@ -32,27 +32,27 @@ router.get(
 
 router.patch(
   "/:id",
-  checkAuth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OWNER, UserRole.SUPPORT),
+  checkAuth(UserRole.OWNER, UserRole.ADMIN), // ❗ SUPPORT cannot change meta
   validateRequest(updateConversationZodSchema),
   ConversationControllers.updateConversation
 );
 
 router.get(
   "/:id/messages",
-  checkAuth(...Object.values(UserRole)),
+  checkAuth(...Object.values(UserRole)), // ✅ viewer can read
   ConversationControllers.getMessagesByConversationId
 );
 
 router.post(
   "/:id/messages",
-  checkAuth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OWNER, UserRole.SUPPORT),
+  checkAuth(UserRole.OWNER, UserRole.ADMIN, UserRole.SUPPORT), // ❌ viewer cannot send
   validateRequest(sendMessageZodSchema),
   ConversationControllers.sendAgentMessage
 );
 
 router.patch(
   "/:id/read",
-  checkAuth(...Object.values(UserRole)),
+  checkAuth(UserRole.OWNER, UserRole.ADMIN, UserRole.SUPPORT), // ❌ viewer no
   ConversationControllers.markConversationAsRead
 );
 

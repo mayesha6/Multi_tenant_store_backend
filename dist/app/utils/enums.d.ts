@@ -10,11 +10,6 @@ export declare enum PlanType {
     PRO = "PRO",
     ENTERPRISE = "ENTERPRISE"
 }
-export declare enum SubscriptionStatus {
-    ACTIVE = "ACTIVE",
-    INACTIVE = "INACTIVE",
-    CANCELLED = "CANCELLED"
-}
 export declare enum ChannelType {
     WHATSAPP = "WHATSAPP",
     INSTAGRAM = "INSTAGRAM",

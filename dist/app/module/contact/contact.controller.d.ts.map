@@ -1,1 +1,1 @@
-{"version":3,"file":"contact.controller.d.ts","sourceRoot":"","sources":["../../../../src/app/module/contact/contact.controller.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,OAAO,EAAE,QAAQ,EAAE,MAAM,SAAS,CAAC;AAwDjD,eAAO,MAAM,iBAAiB;;;;;;CAM7B,CAAC"}
+{"version":3,"file":"contact.controller.d.ts","sourceRoot":"","sources":["../../../../src/app/module/contact/contact.controller.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,YAAY,EAAE,OAAO,EAAE,QAAQ,EAAE,MAAM,SAAS,CAAC;AA2F/D,eAAO,MAAM,kBAAkB;;;;;;CAM9B,CAAC"}

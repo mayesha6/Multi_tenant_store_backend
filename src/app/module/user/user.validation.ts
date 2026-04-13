@@ -31,7 +31,8 @@ export const createUserZodSchema = z.object({
     })
     .optional(),
   address: z.string().max(200, { message: "Address cannot exceed 200 characters." }).optional(),
-});
+  tenantId: z.string().optional(),
+}); 
 
 export const updateUserZodSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters long." }).max(50, { message: "Name cannot exceed 50 characters." }).optional(),

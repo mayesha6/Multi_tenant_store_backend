@@ -4,8 +4,8 @@ export declare const createUserZodSchema: z.ZodObject<{
     email: z.ZodString;
     password: z.ZodString;
     phone: z.ZodOptional<z.ZodString>;
-    tenantId: z.ZodString;
     address: z.ZodOptional<z.ZodString>;
+    tenantId: z.ZodOptional<z.ZodString>;
 }, z.core.$strip>;
 export declare const updateUserZodSchema: z.ZodObject<{
     name: z.ZodOptional<z.ZodString>;

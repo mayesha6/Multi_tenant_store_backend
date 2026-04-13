@@ -10,52 +10,47 @@ import {
 
 const router = Router();
 
-// Create contact
 router.post(
   "/",
-  checkAuth(UserRole.OWNER, UserRole.ADMIN, UserRole.AGENT, UserRole.SUPPORT),
+  checkAuth(UserRole.OWNER, UserRole.ADMIN, UserRole.SUPPORT), // ✅ only creators
   validateRequest(createContactZodSchema),
   ContactControllers.createContact
 );
 
-// List contacts with search/filter/pagination
 router.get(
   "/",
   checkAuth(
     UserRole.OWNER,
     UserRole.ADMIN,
-    UserRole.AGENT,
     UserRole.SUPPORT,
+    UserRole.VIEWER,
     UserRole.SUPER_ADMIN
-  ),
+  ), // ✅ viewer can see
   ContactControllers.getAllContacts
 );
 
-// Get single contact
 router.get(
   "/:id",
   checkAuth(
     UserRole.OWNER,
     UserRole.ADMIN,
-    UserRole.AGENT,
     UserRole.SUPPORT,
+    UserRole.VIEWER,
     UserRole.SUPER_ADMIN
   ),
   ContactControllers.getSingleContact
 );
 
-// Update contact
 router.patch(
   "/:id",
-  checkAuth(UserRole.OWNER, UserRole.ADMIN, UserRole.AGENT, UserRole.SUPPORT),
+  checkAuth(UserRole.OWNER, UserRole.ADMIN, UserRole.SUPPORT), // ❌ viewer cannot update
   validateRequest(updateContactZodSchema),
   ContactControllers.updateContact
 );
 
-// Soft delete contact
 router.delete(
   "/:id",
-  checkAuth(UserRole.OWNER, UserRole.ADMIN),
+  checkAuth(UserRole.OWNER, UserRole.ADMIN), // ✅ restricted
   ContactControllers.deleteContact
 );
 

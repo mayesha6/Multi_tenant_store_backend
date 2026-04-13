@@ -7,25 +7,22 @@ import { UserRole } from "@prisma/client";
 
 const router = Router();
 
-// send message
 router.post(
   "/:conversationId",
-  checkAuth(UserRole.ADMIN, UserRole.AGENT, UserRole.SUPPORT),
+  checkAuth(UserRole.OWNER, UserRole.ADMIN, UserRole.SUPPORT), // ❌ viewer no
   validateRequest(sendMessageZodSchema),
   MessageControllers.sendMessage
 );
 
-// get messages
 router.get(
   "/:conversationId",
-  checkAuth(UserRole.ADMIN, UserRole.AGENT, UserRole.SUPPORT),
+  checkAuth(...Object.values(UserRole)), // ✅ viewer can read
   MessageControllers.getMessages
 );
 
-// mark seen
 router.patch(
   "/:conversationId/seen",
-  checkAuth(UserRole.ADMIN, UserRole.AGENT, UserRole.SUPPORT),
+  checkAuth(UserRole.OWNER, UserRole.ADMIN, UserRole.SUPPORT), // ❌ viewer no
   MessageControllers.markSeen
 );
 

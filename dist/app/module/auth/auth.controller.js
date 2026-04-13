@@ -74,12 +74,12 @@ const changePassword = catchAsync(async (req, res, next) => {
         data: null,
     });
 });
-const resetPassword = catchAsync(async (req, res) => {
-    const { resetToken, newPassword } = req.body;
-    await AuthServices.resetPassword(resetToken, newPassword);
+export const resetPassword = catchAsync(async (req, res) => {
+    const { email, otp, newPassword, confirmPassword } = req.body;
+    await AuthServices.resetPassword(email, otp, newPassword, confirmPassword);
     sendResponse(res, {
         success: true,
-        statusCode: 200,
+        statusCode: httpStatus.OK,
         message: "Password reset successfully",
         data: null,
     });
@@ -95,19 +95,19 @@ const setPassword = catchAsync(async (req, res, next) => {
         data: null,
     });
 });
-const forgotPassword = catchAsync(async (req, res, next) => {
+const forgotPassword = catchAsync(async (req, res) => {
     const { email } = req.body;
     await AuthServices.forgotPassword(email);
     sendResponse(res, {
         success: true,
         statusCode: httpStatus.OK,
-        message: "Email Sent Successfully",
+        message: "OTP sent successfully",
         data: null,
     });
 });
-const sendSignupOtp = catchAsync(async (req, res, next) => {
-    const { email, name } = req.body;
-    await AuthServices.sendSignupOtp(email, name);
+const resendSignupOtp = catchAsync(async (req, res, next) => {
+    const { email } = req.body;
+    await AuthServices.resendSignupOtp(email);
     sendResponse(res, {
         success: true,
         statusCode: httpStatus.OK,
@@ -117,15 +117,15 @@ const sendSignupOtp = catchAsync(async (req, res, next) => {
 });
 const verifySignupOtp = catchAsync(async (req, res, next) => {
     const { email, otp } = req.body;
-    const user = await AuthServices.verifySignupOtp({ email, otp });
+    const user = await AuthServices.verifySignupOtp(email, otp);
     sendResponse(res, {
         success: true,
         statusCode: httpStatus.CREATED,
         message: "User verified successfully",
         data: {
-            id: user.user.id,
-            email: user.user.email,
-            isVerified: user.user.isVerified,
+            id: user.id,
+            email: user.email,
+            isVerified: user.isVerified,
         },
     });
 });
@@ -151,7 +151,7 @@ export const AuthControllers = {
     forgotPassword,
     changePassword,
     googleCallbackController,
-    sendSignupOtp,
+    resendSignupOtp,
     verifySignupOtp,
 };
 //# sourceMappingURL=auth.controller.js.map

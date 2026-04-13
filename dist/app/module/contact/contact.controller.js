@@ -1,56 +1,66 @@
+import httpStatus from "http-status-codes";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
-import { ContactService } from "./contact.services";
-import httpStatus from "http-status-codes";
-const createContact = catchAsync(async (req, res) => {
-    const contact = await ContactService.createContact(req.body);
+import { ContactServices } from "./contact.services";
+const createContact = catchAsync(async (req, res, next) => {
+    const currentUser = req.user;
+    const result = await ContactServices.createContact(currentUser, req.body);
     sendResponse(res, {
         success: true,
         statusCode: httpStatus.CREATED,
         message: "Contact created successfully",
-        data: contact,
+        data: result,
     });
 });
-const getContacts = catchAsync(async (req, res) => {
-    const contacts = await ContactService.getContacts();
+const getAllContacts = catchAsync(async (req, res, next) => {
+    const currentUser = req.user;
+    const query = req.query;
+    const result = await ContactServices.getAllContacts(currentUser, query);
     sendResponse(res, {
         success: true,
         statusCode: httpStatus.OK,
-        message: "Contacts fetched successfully",
-        data: contacts,
+        message: "Contacts retrieved successfully",
+        data: result.data,
+        meta: result.meta,
     });
 });
-const getContactById = catchAsync(async (req, res) => {
-    const contact = await ContactService.getContactById(req.params.id);
+const getSingleContact = catchAsync(async (req, res, next) => {
+    const currentUser = req.user;
+    const contactId = req.params.id;
+    const result = await ContactServices.getSingleContact(currentUser, contactId);
     sendResponse(res, {
         success: true,
         statusCode: httpStatus.OK,
-        message: "Contact fetched successfully",
-        data: contact,
+        message: "Contact retrieved successfully",
+        data: result,
     });
 });
-const updateContact = catchAsync(async (req, res) => {
-    const contact = await ContactService.updateContact(req.params.id, req.body);
+const updateContact = catchAsync(async (req, res, next) => {
+    const currentUser = req.user;
+    const contactId = req.params.id;
+    const result = await ContactServices.updateContact(currentUser, contactId, req.body);
     sendResponse(res, {
         success: true,
         statusCode: httpStatus.OK,
         message: "Contact updated successfully",
-        data: contact,
+        data: result,
     });
 });
-const deleteContact = catchAsync(async (req, res) => {
-    const result = await ContactService.deleteContact(req.params.id);
+const deleteContact = catchAsync(async (req, res, next) => {
+    const currentUser = req.user;
+    const contactId = req.params.id;
+    await ContactServices.deleteContact(currentUser, contactId);
     sendResponse(res, {
         success: true,
         statusCode: httpStatus.OK,
-        message: result.message,
+        message: "Contact deleted successfully",
         data: null,
     });
 });
-export const ContactController = {
+export const ContactControllers = {
     createContact,
-    getContacts,
-    getContactById,
+    getAllContacts,
+    getSingleContact,
     updateContact,
     deleteContact,
 };
