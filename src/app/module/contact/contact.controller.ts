@@ -1,59 +1,53 @@
-
+import type { NextFunction, Request, Response } from "express";
+import type { JwtPayload } from "jsonwebtoken";
 import httpStatus from "http-status-codes";
 import { catchAsync } from "../../utils/catchAsync";
-import type { NextFunction, Request, Response } from "express";
-import { ContactServices } from "./contact.services";
 import { sendResponse } from "../../utils/sendResponse";
-import type { JwtPayload } from "jsonwebtoken";
+import { ContactServices } from "./contact.services";
 
 const createContact = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const contact = await ContactServices.createContact(req.body);
+    const currentUser = req.user as JwtPayload;
+
+    const result = await ContactServices.createContact(currentUser, req.body);
 
     sendResponse(res, {
       success: true,
       statusCode: httpStatus.CREATED,
       message: "Contact created successfully",
-      data: contact,
+      data: result,
     });
   }
 );
 
 const getAllContacts = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    // Assumption:
-    // তোমার auth middleware req.user inject করে
-    // এবং সেখানে tenantId আছে
-    const user = req.user as JwtPayload
-    const tenantId = user.tenantId;
-    const result = await ContactServices.getAllContacts(
-      req.query,
-      tenantId
-    );
+    const currentUser = req.user as JwtPayload;
+    const query = req.query as Record<string, string>;
+
+    const result = await ContactServices.getAllContacts(currentUser, query);
 
     sendResponse(res, {
       success: true,
       statusCode: httpStatus.OK,
-      message: "Contacts fetched successfully",
-      meta: result.meta,
+      message: "Contacts retrieved successfully",
       data: result.data,
+      meta: result.meta,
     });
   }
 );
 
 const getSingleContact = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-     const user = req.user as JwtPayload
-    const tenantId = user.tenantId;
-    const result = await ContactServices.getSingleContact(
-      req.params.id as string,
-      tenantId
-    );
+    const currentUser = req.user as JwtPayload;
+    const contactId = req.params.id as string;
+
+    const result = await ContactServices.getSingleContact(currentUser, contactId);
 
     sendResponse(res, {
       success: true,
       statusCode: httpStatus.OK,
-      message: "Contact fetched successfully",
+      message: "Contact retrieved successfully",
       data: result,
     });
   }
@@ -61,12 +55,13 @@ const getSingleContact = catchAsync(
 
 const updateContact = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const user = req.user as JwtPayload;
-    const tenantId = user.tenantId;
+    const currentUser = req.user as JwtPayload;
+    const contactId = req.params.id as string;
+
     const result = await ContactServices.updateContact(
-      req.params.id as string,
-      req.body,
-      tenantId
+      currentUser,
+      contactId,
+      req.body
     );
 
     sendResponse(res, {
@@ -78,21 +73,18 @@ const updateContact = catchAsync(
   }
 );
 
-const deleteContactById = catchAsync(
+const deleteContact = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const user = req.user as JwtPayload;
-    const tenantId = user.tenantId;
+    const currentUser = req.user as JwtPayload;
+    const contactId = req.params.id as string;
 
-    const result = await ContactServices.deleteContactById(
-      req.params.id as string,
-      tenantId
-    );
+    await ContactServices.deleteContact(currentUser, contactId);
 
     sendResponse(res, {
       success: true,
       statusCode: httpStatus.OK,
       message: "Contact deleted successfully",
-      data: result,
+      data: null,
     });
   }
 );
@@ -102,5 +94,5 @@ export const ContactControllers = {
   getAllContacts,
   getSingleContact,
   updateContact,
-  deleteContactById,
+  deleteContact,
 };

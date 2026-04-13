@@ -1,9 +1,15 @@
-// message.ts
+import { MessageType } from "@prisma/client";
 import { z } from "zod";
-import { SenderType } from "../../utils/enums";
 
-export const messageSchema = z.object({
-  conversationId: z.string().uuid(),
-  senderType:  z.enum(Object.values(SenderType) as [string, ...string[]]),
-  content: z.string().min(1),
+export const sendMessageZodSchema = z.object({
+  content: z
+    .string()
+    .min(1, { message: "Message content is required" })
+    .max(5000, { message: "Message too long" }),
+
+  type: z
+    .enum(Object.values(MessageType) as [string, ...string[]])
+    .optional(),
+
+  metadata: z.any().optional(),
 });

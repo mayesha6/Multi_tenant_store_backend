@@ -1,7 +1,6 @@
-/* eslint-disable no-console */
+import { envVars } from "./app/config/env";
 import http, { Server } from "http";
 import app from "./app";
-import { envVars } from "./app/config/env";
 import { connectRedis } from "./app/config/redis.config";
 import { seedSuperAdmin } from "./app/utils/seedSuperAdmin";
 import prisma from "./app/lib/prisma";

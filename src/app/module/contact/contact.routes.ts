@@ -10,36 +10,53 @@ import {
 
 const router = Router();
 
+// Create contact
 router.post(
-  "/create",
-  checkAuth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OWNER, UserRole.SUPPORT),
+  "/",
+  checkAuth(UserRole.OWNER, UserRole.ADMIN, UserRole.AGENT, UserRole.SUPPORT),
   validateRequest(createContactZodSchema),
   ContactControllers.createContact
 );
 
+// List contacts with search/filter/pagination
 router.get(
-  "/all-contacts",
-  checkAuth(...Object.values(UserRole)),
+  "/",
+  checkAuth(
+    UserRole.OWNER,
+    UserRole.ADMIN,
+    UserRole.AGENT,
+    UserRole.SUPPORT,
+    UserRole.SUPER_ADMIN
+  ),
   ContactControllers.getAllContacts
 );
 
+// Get single contact
 router.get(
   "/:id",
-  checkAuth(...Object.values(UserRole)),
+  checkAuth(
+    UserRole.OWNER,
+    UserRole.ADMIN,
+    UserRole.AGENT,
+    UserRole.SUPPORT,
+    UserRole.SUPER_ADMIN
+  ),
   ContactControllers.getSingleContact
 );
 
+// Update contact
 router.patch(
   "/:id",
-  checkAuth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OWNER, UserRole.SUPPORT),
+  checkAuth(UserRole.OWNER, UserRole.ADMIN, UserRole.AGENT, UserRole.SUPPORT),
   validateRequest(updateContactZodSchema),
   ContactControllers.updateContact
 );
 
+// Soft delete contact
 router.delete(
   "/:id",
-  checkAuth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OWNER),
-  ContactControllers.deleteContactById
+  checkAuth(UserRole.OWNER, UserRole.ADMIN),
+  ContactControllers.deleteContact
 );
 
 export const ContactRoutes = router;

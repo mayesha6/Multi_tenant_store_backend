@@ -1,9 +1,9 @@
+import { envVars } from "./app/config/env";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { type Request, type Response } from "express";
 import expressSession from "express-session";
 import passport from "passport";
-import { envVars } from "./app/config/env";
 import "./app/config/passport";
 import { globalErrorHandler } from "./app/middlewares/globalErrorHandler";
 import notFound from "./app/middlewares/notFound";

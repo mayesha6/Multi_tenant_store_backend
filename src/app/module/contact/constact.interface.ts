@@ -16,12 +16,3 @@ export interface IContact {
   createdAt?: Date;
   updatedAt?: Date;
 }
-
-export interface IContactQuery {
-  searchTerm?: string;
-  status?: ContactStatus;
-  source?: ContactSource;
-  tag?: string;
-  page?: string;
-  limit?: string;
-}

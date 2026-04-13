@@ -1,11 +1,7 @@
 import type {
   ConversationChannel,
   ConversationStatus,
-  MessageDeliveryStatus,
-  MessageDirection,
-  MessageSenderType,
   MessageType,
-  Prisma,
 } from "@prisma/client";
 
 export interface IConversation {
@@ -26,41 +22,17 @@ export interface IConversation {
   updatedAt?: Date;
 }
 
-export interface IMessage {
-  id?: string;
-  tenantId: string;
-  conversationId: string;
-  senderId?: string | null;
-  senderType: MessageSenderType;
-  direction: MessageDirection;
-  type?: MessageType;
-  content?: string | null;
-  externalMessageId?: string | null;
-  deliveryStatus?: MessageDeliveryStatus;
-  metadata?: Prisma.JsonValue | null;
-  isDeleted?: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-export interface IConversationQuery {
-  searchTerm?: string;
-  status?: ConversationStatus;
-  channel?: ConversationChannel;
+export interface ICreateConversationPayload {
+  contactId: string;
+  subject?: string;
+  channel: ConversationChannel;
   assignedToId?: string;
-
-  assigned?: "me";
-  unassigned?: "true";
-  unread?: "true";
-
-  page?: string;
-  limit?: string;
-  userId?: string;
 }
 
-export interface ISendMessagePayload {
-  conversationId: string;
-  content?: string | null;
-  type?: MessageType;
-  metadata?: Prisma.JsonValue | null;
+export interface IAssignConversationPayload {
+  assignedToId: string | null;
+}
+
+export interface IUpdateConversationStatusPayload {
+  status: ConversationStatus;
 }

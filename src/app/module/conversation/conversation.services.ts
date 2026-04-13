@@ -7,9 +7,10 @@ import {
 } from "@prisma/client";
 import prisma from "../../lib/prisma";
 import AppError from "../../errorHelpers/AppError";
-import type { IConversation, IConversationQuery, IMessage } from "./conversation.interface";
+import type { IConversation } from "./conversation.interface";
 import { emitToConversationRoom, emitToTenantRoom } from "../../lib/socketEmitter";
 import { QueryBuilder } from "../../utils/QueryBuilder";
+import type { IMessage } from "../message/message.interface";
 
 const createConversation = async (payload: IConversation, tenantId: string) => {
   const contact = await prisma.contact.findFirst({
@@ -50,13 +51,9 @@ const createConversation = async (payload: IConversation, tenantId: string) => {
     createData.subject = payload.subject;
   }
 
-  if (payload.status !== undefined) {
-    createData.status = payload.status;
-  }
+  createData.status = "OPEN";
 
-  if (payload.assignedToId !== undefined) {
-    createData.assignedToId = payload.assignedToId;
-  }
+  createData.assignedToId = payload.assignedToId ?? null;
 
   const conversation = await prisma.conversation.create({
     data: createData,
@@ -72,7 +69,7 @@ const createConversation = async (payload: IConversation, tenantId: string) => {
     },
   });
 
-  emitToTenantRoom(tenantId, "conversation_created", conversation);
+  emitToTenantRoom(tenantId, "conversation.created", conversation);
 
   return conversation;
 };
@@ -82,19 +79,20 @@ const getAllConversations = async (
   tenantId: string,
   userId: string
 ) => {
-
   const queryBuilder =
     new QueryBuilder<Prisma.ConversationWhereInput>(query);
 
   /**
-   * 🔥 STEP 2: base prisma query
+   * STEP 1: base prisma query (NO filter here)
    */
   const prismaQuery = queryBuilder
-    .filter()
     .sort()
     .paginate()
     .build();
 
+  /**
+   * STEP 2: manual + dynamic filters
+   */
   const andConditions: Prisma.ConversationWhereInput[] = [
     {
       tenantId,
@@ -102,11 +100,20 @@ const getAllConversations = async (
     },
   ];
 
+  /**
+   * 🔍 SEARCH
+   */
   if (query.searchTerm) {
     andConditions.push({
       OR: [
         {
           subject: {
+            contains: query.searchTerm,
+            mode: "insensitive",
+          },
+        },
+        {
+          lastMessageText: {
             contains: query.searchTerm,
             mode: "insensitive",
           },
@@ -135,16 +142,13 @@ const getAllConversations = async (
             },
           },
         },
-        {
-          lastMessageText: {
-            contains: query.searchTerm,
-            mode: "insensitive",
-          },
-        },
       ],
     });
   }
 
+  /**
+   * 🎯 FILTERS
+   */
   if (query.status) {
     andConditions.push({
       status: query.status as any,
@@ -157,7 +161,7 @@ const getAllConversations = async (
     });
   }
 
-  if (query.assigned === "me") {
+  if (query.assigned === "me" && userId) {
     andConditions.push({
       assignedToId: userId,
     });
@@ -183,11 +187,19 @@ const getAllConversations = async (
     });
   }
 
-
-  prismaQuery.where = {
-    AND: andConditions,
+  /**
+   * 🧠 MERGE with QueryBuilder.where
+   */
+  const finalWhere: Prisma.ConversationWhereInput = {
+    AND: [
+      ...(prismaQuery.where ? [prismaQuery.where] : []),
+      ...andConditions,
+    ],
   };
 
+  /**
+   * 📦 INCLUDE
+   */
   const include = {
     contact: true,
     assignedTo: {
@@ -199,9 +211,13 @@ const getAllConversations = async (
     },
   };
 
+  /**
+   * 🚀 QUERY EXECUTION
+   */
   const [data, total] = await Promise.all([
     prisma.conversation.findMany({
       ...prismaQuery,
+      where: finalWhere,
       include,
       orderBy: prismaQuery.orderBy || {
         lastMessageAt: "desc",
@@ -209,7 +225,7 @@ const getAllConversations = async (
     }),
 
     prisma.conversation.count({
-      where: prismaQuery.where,
+      where: finalWhere,
     }),
   ]);
 
@@ -220,7 +236,6 @@ const getAllConversations = async (
     meta,
   };
 };
-
 
 const getSingleConversation = async (id: string, tenantId: string) => {
   const conversation = await prisma.conversation.findFirst({
@@ -304,13 +319,6 @@ const updateConversation = async (
         : { connect: { id: payload.assignedToId } };
   }
 
-  if (payload.unreadCount !== undefined) {
-    updateData.unreadCount = payload.unreadCount;
-  }
-
-  if (payload.isAiHandled !== undefined) {
-    updateData.isAiHandled = payload.isAiHandled;
-  }
 
   const updatedConversation = await prisma.conversation.update({
     where: { id },
@@ -327,8 +335,8 @@ const updateConversation = async (
     },
   });
 
-  emitToTenantRoom(tenantId, "conversation_updated", updatedConversation);
-  emitToConversationRoom(id, "conversation_updated", updatedConversation);
+  emitToTenantRoom(tenantId, "conversation.updated", updatedConversation);
+  emitToConversationRoom(id, "conversation.updated", updatedConversation);
 
   return updatedConversation;
 };
@@ -401,8 +409,8 @@ const sendAgentMessage = async (
           payload.metadata === undefined
             ? Prisma.JsonNull
             : payload.metadata === null
-            ? Prisma.JsonNull
-            : (payload.metadata as Prisma.InputJsonValue),
+              ? Prisma.JsonNull
+              : (payload.metadata as Prisma.InputJsonValue),
       },
     });
 
@@ -436,8 +444,8 @@ const sendAgentMessage = async (
    * 1) conversation room -> open chat screen যেন নতুন message পায়
    * 2) tenant room -> conversation list / unread badges update করার জন্য
    */
-  emitToConversationRoom(conversationId, "new_message", result.message);
-  emitToTenantRoom(tenantId, "conversation_updated", result.conversation);
+  emitToConversationRoom(conversationId, "new.message", result.message);
+  emitToTenantRoom(tenantId, "conversation.updated", result.conversation);
 
   return result;
 };
@@ -469,8 +477,8 @@ const createInboundMessage = async (payload: IMessage) => {
           payload.metadata === undefined
             ? Prisma.JsonNull
             : payload.metadata === null
-            ? Prisma.JsonNull
-            : (payload.metadata as Prisma.InputJsonValue),
+              ? Prisma.JsonNull
+              : (payload.metadata as Prisma.InputJsonValue),
       },
     });
 
@@ -502,8 +510,8 @@ const createInboundMessage = async (payload: IMessage) => {
     };
   });
 
-  emitToConversationRoom(payload.conversationId, "new_message", result.message);
-  emitToTenantRoom(payload.tenantId, "conversation_updated", result.conversation);
+  emitToConversationRoom(payload.conversationId, "new.message", result.message);
+  emitToTenantRoom(payload.tenantId, "conversation.updated", result.conversation);
 
   return result;
 };
@@ -538,8 +546,8 @@ const markConversationAsRead = async (conversationId: string, tenantId: string) 
     },
   });
 
-  emitToTenantRoom(tenantId, "conversation_updated", updatedConversation);
-  emitToConversationRoom(conversationId, "conversation_read", {
+  emitToTenantRoom(tenantId, "conversation.updated", updatedConversation);
+  emitToConversationRoom(conversationId, "conversation.read", {
     conversationId,
     unreadCount: 0,
   });

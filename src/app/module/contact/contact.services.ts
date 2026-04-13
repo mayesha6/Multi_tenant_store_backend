@@ -1,169 +1,185 @@
 import httpStatus from "http-status-codes";
-import { ContactSource, Prisma } from "@prisma/client";
-import type { IContact, IContactQuery } from "./constact.interface";
-import prisma from "../../lib/prisma";
+import type { JwtPayload } from "jsonwebtoken";
+import { ContactSource, ContactStatus, Prisma, UserRole } from "@prisma/client";
 import AppError from "../../errorHelpers/AppError";
+import prisma from "../../lib/prisma";
+import { QueryBuilder } from "../../utils/QueryBuilder";
+import { contactSearchableFields } from "./contact.constant";
+import type { IContact } from "./constact.interface";
 
-const createContact = async (payload: IContact) => {
-  const {
-    tenantId,
-    name,
-    email,
-    phone,
-    picture,
-    address,
-    source = ContactSource.MANUAL,
-    status,
-    tags = [],
-    metadata,
-  } = payload;
 
-  const normalizedEmail = email?.trim().toLowerCase() || null;
-  const normalizedPhone = phone?.trim() || null;
+const ensureTenantAccess = (currentUser: JwtPayload) => {
+  // SUPER_ADMIN may skip tenant restriction only if explicitly needed later.
+  // For normal SaaS contact operations, tenant is required.
+  if (currentUser.role !== UserRole.SUPER_ADMIN && !currentUser.tenantId) {
+    throw new AppError(httpStatus.BAD_REQUEST, "User has no tenant");
+  }
+};
 
-  // Deduplication logic:
-  // Same tenant-এর মধ্যে same email / phone আবার create করতে দিব না
-  if (normalizedEmail) {
+const normalizeEmail = (email?: string | null) => {
+  if (!email) return null;
+  return email.trim().toLowerCase();
+};
+
+const normalizePhone = (phone?: string | null) => {
+  if (!phone) return null;
+  return phone.trim();
+};
+
+const normalizeTags = (tags?: string[]) => {
+  if (!tags) return [];
+  return [...new Set(tags.map((tag) => tag.trim()).filter(Boolean))];
+};
+
+const createContact = async (currentUser: JwtPayload, payload: IContact) => {
+  ensureTenantAccess(currentUser);
+
+  const tenantId = currentUser.tenantId as string;
+
+  const email = normalizeEmail(payload.email);
+  const phone = normalizePhone(payload.phone);
+
+  // Duplicate email check within same tenant
+  if (email) {
     const existingByEmail = await prisma.contact.findFirst({
       where: {
         tenantId,
-        email: normalizedEmail,
+        email,
         isDeleted: false,
       },
     });
 
     if (existingByEmail) {
-      throw new AppError(httpStatus.BAD_REQUEST, "Contact already exists with this email");
+      throw new AppError(httpStatus.BAD_REQUEST, "Contact with this email already exists");
     }
   }
 
-  if (normalizedPhone) {
+  // Duplicate phone check within same tenant
+  if (phone) {
     const existingByPhone = await prisma.contact.findFirst({
       where: {
         tenantId,
-        phone: normalizedPhone,
+        phone,
         isDeleted: false,
       },
     });
 
     if (existingByPhone) {
-      throw new AppError(httpStatus.BAD_REQUEST, "Contact already exists with this phone");
+      throw new AppError(httpStatus.BAD_REQUEST, "Contact with this phone already exists");
     }
   }
-  const createData: Prisma.ContactCreateInput = {
-    name,
-    email: normalizedEmail,
-    phone: normalizedPhone,
-    picture: picture || null,
-    address: address || null,
-    source,
-    tags,
-    metadata:
-      metadata === undefined
-        ? Prisma.JsonNull
-        : metadata === null
-        ? Prisma.JsonNull
-        : (metadata as Prisma.InputJsonValue),
 
-    // tenant relation দিয়ে create করলে Prisma type safer হয়
-    tenant: {
-      connect: {
-        id: tenantId,
-      },
-    },
-  };
-
-  // IMPORTANT:
-  // status undefined হলে field add করবো না
-  // তাহলে Prisma schema default(ACTIVE) use করবে
-  if (status !== undefined) {
-    createData.status = status;
-  }
   const contact = await prisma.contact.create({
-    data: createData
+    data: {
+      tenantId,
+      name: payload.name.trim(),
+      email,
+      phone,
+      picture: payload.picture ?? null,
+      address: payload.address ?? null,
+      status: payload.status ?? ContactStatus.ACTIVE,
+      source: payload.source ?? ContactSource.MANUAL,
+      tags: normalizeTags(payload.tags),
+      metadata: payload.metadata ?? Prisma.JsonNull,
+    },
   });
 
   return contact;
 };
 
-const getAllContacts = async (query: IContactQuery, tenantId: string) => {
-  const { searchTerm, status, source, tag } = query;
-  const page = Number(query.page) || 1;
-  const limit = Number(query.limit) || 10;
-  const skip = (page - 1) * limit;
+const getAllContacts = async (
+  currentUser: JwtPayload,
+  query: Record<string, string>
+) => {
+  ensureTenantAccess(currentUser);
 
-  const andConditions: Prisma.ContactWhereInput[] = [
-    {
-      tenantId,
-      isDeleted: false,
-    },
-  ];
+  const tenantId = currentUser.tenantId as string;
 
-  if (searchTerm) {
-    andConditions.push({
-      OR: [
-        { name: { contains: searchTerm, mode: "insensitive" } },
-        { email: { contains: searchTerm, mode: "insensitive" } },
-        { phone: { contains: searchTerm, mode: "insensitive" } },
-      ],
-    });
-  }
+  const queryBuilder = new QueryBuilder<Prisma.ContactWhereInput>(query);
 
-  if (status) {
-    andConditions.push({ status });
-  }
+  const prismaQuery = queryBuilder
+    .filter()
+    .search(contactSearchableFields)
+    .sort()
+    .fields()
+    .paginate()
+    .build();
 
-  if (source) {
-    andConditions.push({ source });
-  }
-
-  if (tag) {
-    andConditions.push({
-      tags: {
-        has: tag,
-      },
-    });
-  }
-
-  const whereConditions: Prisma.ContactWhereInput = {
-    AND: andConditions,
+  const where: Prisma.ContactWhereInput = {
+    ...(prismaQuery.where || {}),
+    tenantId,
+    isDeleted: false,
   };
 
-  const [data, metaTotal] = await Promise.all([
-    prisma.contact.findMany({
-      where: whereConditions,
-      skip,
-      take: limit,
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.contact.count({
-      where: whereConditions,
-    }),
+  // Optional explicit filters
+  if (query.status) {
+    where.status = query.status as ContactStatus;
+  }
+
+  if (query.source) {
+    where.source = query.source as ContactSource;
+  }
+
+  // Tag filter: ?tag=VIP or ?tag=Frequent Buyer
+  if (query.tag) {
+    where.tags = {
+      has: query.tag,
+    };
+  }
+
+  const finalQuery: Prisma.ContactFindManyArgs = {
+    ...prismaQuery,
+    where,
+    orderBy: prismaQuery.orderBy || { createdAt: "desc" },
+    select: prismaQuery.select || {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      picture: true,
+      address: true,
+      status: true,
+      source: true,
+      tags: true,
+      createdAt: true,
+      updatedAt: true,
+      _count: {
+        select: {
+          conversations: true,
+        },
+      },
+    },
+  };
+
+  const [data, total] = await Promise.all([
+    prisma.contact.findMany(finalQuery),
+    prisma.contact.count({ where }),
   ]);
 
+  const meta = queryBuilder.getMeta(total);
+
   return {
-    meta: {
-      page,
-      limit,
-      total: metaTotal,
-      totalPage: Math.ceil(metaTotal / limit),
-    },
     data,
+    meta,
   };
 };
 
-const getSingleContact = async (id: string, tenantId: string) => {
+const getSingleContact = async (currentUser: JwtPayload, contactId: string) => {
+  ensureTenantAccess(currentUser);
+
+  const tenantId = currentUser.tenantId as string;
+
   const contact = await prisma.contact.findFirst({
     where: {
-      id,
+      id: contactId,
       tenantId,
       isDeleted: false,
     },
     include: {
-      conversations: {
-        where: { isDeleted: false },
-        orderBy: { updatedAt: "desc" },
-        take: 10,
+      _count: {
+        select: {
+          conversations: true,
+        },
       },
     },
   });
@@ -175,10 +191,18 @@ const getSingleContact = async (id: string, tenantId: string) => {
   return contact;
 };
 
-const updateContact = async (id: string, payload: Partial<IContact>, tenantId: string) => {
+const updateContact = async (
+  currentUser: JwtPayload,
+  contactId: string,
+  payload: Partial<IContact>
+) => {
+  ensureTenantAccess(currentUser);
+
+  const tenantId = currentUser.tenantId as string;
+
   const existingContact = await prisma.contact.findFirst({
     where: {
-      id,
+      id: contactId,
       tenantId,
       isDeleted: false,
     },
@@ -188,107 +212,123 @@ const updateContact = async (id: string, payload: Partial<IContact>, tenantId: s
     throw new AppError(httpStatus.NOT_FOUND, "Contact not found");
   }
 
-  const updateData: Prisma.ContactUpdateInput = {};
+  const email = normalizeEmail(payload.email);
+  const phone = normalizePhone(payload.phone);
+
+  // Unique email check excluding current contact
+  if (email) {
+    const duplicateByEmail = await prisma.contact.findFirst({
+      where: {
+        tenantId,
+        email,
+        isDeleted: false,
+        NOT: {
+          id: contactId,
+        },
+      },
+    });
+
+    if (duplicateByEmail) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "Contact with this email already exists"
+      );
+    }
+  }
+
+  // Unique phone check excluding current contact
+  if (phone) {
+    const duplicateByPhone = await prisma.contact.findFirst({
+      where: {
+        tenantId,
+        phone,
+        isDeleted: false,
+        NOT: {
+          id: contactId,
+        },
+      },
+    });
+
+    if (duplicateByPhone) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "Contact with this phone already exists"
+      );
+    }
+  }
+
+  // SECURITY: never let generic update change tenant ownership
+  delete (payload as any).tenantId;
+  delete (payload as any).isDeleted;
+
+  const data: Prisma.ContactUpdateInput = {};
 
   if (payload.name !== undefined) {
-    updateData.name = payload.name;
+    data.name = payload.name.trim();
   }
 
   if (payload.email !== undefined) {
-    updateData.email =
-      payload.email === null
-        ? null
-        : payload.email.trim() === ""
-        ? null
-        : payload.email.trim().toLowerCase();
+    data.email = email;
   }
 
   if (payload.phone !== undefined) {
-    updateData.phone =
-      payload.phone === null
-        ? null
-        : payload.phone.trim() === ""
-        ? null
-        : payload.phone.trim();
+    data.phone = phone;
   }
 
   if (payload.picture !== undefined) {
-    updateData.picture = payload.picture || null;
+    data.picture = payload.picture ?? null;
   }
 
   if (payload.address !== undefined) {
-    updateData.address = payload.address || null;
+    data.address = payload.address ?? null;
   }
 
   if (payload.status !== undefined) {
-    updateData.status = payload.status;
+    data.status = payload.status;
   }
 
   if (payload.source !== undefined) {
-    updateData.source = payload.source;
+    data.source = payload.source;
   }
 
   if (payload.tags !== undefined) {
-    updateData.tags = payload.tags;
-  }
-
-  if (payload.isDeleted !== undefined) {
-    updateData.isDeleted = payload.isDeleted;
+    data.tags = normalizeTags(payload.tags);
   }
 
   if (payload.metadata !== undefined) {
-    updateData.metadata =
+    data.metadata =
       payload.metadata === null
         ? Prisma.JsonNull
         : (payload.metadata as Prisma.InputJsonValue);
   }
 
-  // email uniqueness check
-  if (updateData.email && typeof updateData.email === "string" && updateData.email !== existingContact.email) {
-    const emailExists = await prisma.contact.findFirst({
-      where: {
-        tenantId,
-        email: updateData.email,
-        isDeleted: false,
-        NOT: { id },
-      },
-    });
-
-    if (emailExists) {
-      throw new AppError(httpStatus.BAD_REQUEST, "Another contact already uses this email");
-    }
-  }
-
-  // phone uniqueness check
-  if (updateData.phone && typeof updateData.phone === "string" && updateData.phone !== existingContact.phone) {
-    const phoneExists = await prisma.contact.findFirst({
-      where: {
-        tenantId,
-        phone: updateData.phone,
-        isDeleted: false,
-        NOT: { id },
-      },
-    });
-
-    if (phoneExists) {
-      throw new AppError(httpStatus.BAD_REQUEST, "Another contact already uses this phone");
-    }
-  }
-
   const updatedContact = await prisma.contact.update({
-    where: { id },
-    data: updateData,
+    where: {
+      id: contactId,
+    },
+    data,
   });
 
   return updatedContact;
 };
 
-const deleteContactById = async (id: string, tenantId: string) => {
+const deleteContact = async (currentUser: JwtPayload, contactId: string) => {
+  ensureTenantAccess(currentUser);
+
+  const tenantId = currentUser.tenantId as string;
+
   const existingContact = await prisma.contact.findFirst({
     where: {
-      id,
+      id: contactId,
       tenantId,
       isDeleted: false,
+    },
+    include: {
+      _count: {
+        select: {
+          conversations: true,
+        },
+      },
     },
   });
 
@@ -296,14 +336,18 @@ const deleteContactById = async (id: string, tenantId: string) => {
     throw new AppError(httpStatus.NOT_FOUND, "Contact not found");
   }
 
-  const deletedContact = await prisma.contact.update({
-    where: { id },
+  // Optional business rule:
+  // If contact has conversations, do soft delete only.
+  await prisma.contact.update({
+    where: {
+      id: contactId,
+    },
     data: {
       isDeleted: true,
     },
   });
 
-  return deletedContact;
+  return null;
 };
 
 export const ContactServices = {
@@ -311,5 +355,5 @@ export const ContactServices = {
   getAllContacts,
   getSingleContact,
   updateContact,
-  deleteContactById,
+  deleteContact,
 };
